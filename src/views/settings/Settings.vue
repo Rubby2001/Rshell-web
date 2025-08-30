@@ -6,7 +6,7 @@
       <!-- 可编辑值 -->
       <el-table-column label="值">
         <template #default="{ row }">
-          <el-input v-model="row.Value" placeholder="请输入值" />
+          <el-input v-model="row.Value" placeholder="请输入值" clearable/>
         </template>
       </el-table-column>
 

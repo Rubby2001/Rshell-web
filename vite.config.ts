@@ -48,6 +48,9 @@ export default defineConfig({
     assetsDir: 'static',
     rollupOptions: {
       output: {
+          entryFileNames: `assets/[hash].js`,
+          chunkFileNames: `assets/[hash].js`,
+          assetFileNames: `assets/[hash].[ext]`,
         /**
          * 分块策略
          * 1. 注意这些包名必须存在，否则打包会报错
