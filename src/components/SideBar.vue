@@ -61,7 +61,12 @@ const items: MenuItem[] = [
         title: 'WebDelivery',
         permiss: '5'
       },
-    ]},
+    ]},{
+    icon: 'Setting',
+    title: '设置',
+    index: "/Settings",
+    permiss: '2',
+  },
   // {
   //   icon: 'User',
   //   index: '4',
