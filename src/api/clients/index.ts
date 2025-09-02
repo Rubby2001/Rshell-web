@@ -179,7 +179,7 @@ export default{
             data:data,
         })
     },
-    GenServer(data: { osType:string,archType:string,listener:string }){
+    GenServer(data: { osType:string,archType:string,listener:string,pass:string }){
         return request({
       //      baseURL: axiosConfig.baseURL,
             url:"/client/GenServer",
@@ -200,7 +200,7 @@ export default{
           method:"GET"
       })
     },
-    StartWebDelivery(data:{listener:string,os:string,arch:string,port:string,filename:string}){
+    StartWebDelivery(data:{listener:string,os:string,arch:string,port:string,filename:string,pass:string}){
         return request({
             url:"/webdelivery/start",
             method:"POST",
@@ -227,6 +227,103 @@ export default{
             method:"POST",
             data:data
         })
+    },
+    getSocks5List(data: { uid: string | null | LocationQueryValue[] }){
+        return request({
+            url:"/socks5/list",
+            method:"GET",
+            params: data
+        })
+    },
+    startSocks5(data: {
+        Socks5port: string;
+        uid: string | null | LocationQueryValue[];
+        UserName: string;
+        ConnectAddress: string;
+        Password: string
+    }){
+        return request({
+            url:"/socks5/start",
+            method:"POST",
+            data:data
+        })
+
+    },
+    OpenSocks5(data:{Socks5port: string;
+        uid: string | null | LocationQueryValue[];
+        UserName: string;
+        ConnectAddress: string;
+        Password: string}){
+        return request({
+            url:"/socks5/open",
+            method:"POST",
+            data:data
+        })
+    },
+    CloseSocks5(data:{Socks5port: string;
+        uid: string | null | LocationQueryValue[];
+        UserName: string;
+        ConnectAddress: string;
+        Password: string}){
+        return request({
+            url:"/socks5/close",
+            method:"POST",
+            data:data
+        })
+    },
+    DeleteSocks5(data:{Socks5port: string;
+        uid: string | null | LocationQueryValue[];
+        UserName: string;
+        ConnectAddress: string;
+        Password: string}){
+        return request({
+            url:"/socks5/delete",
+            method:"POST",
+            data:data
+        })
+    },
+    ExecuteBin(data:{
+        uid: string;
+        mode: string;
+        file: File;
+        args: string;
+
+    }){
+        const formData = new FormData();
+
+        // 添加文件和其他数据到 FormData 中
+        formData.append("file", data.file);
+        formData.append("uid", data.uid as string); // 转换为字符串以确保正确传递
+        formData.append("args", data.args as string); // 新增的参数
+        formData.append("mode", data.mode as string);
+
+        return request({
+            //      baseURL: axiosConfig.baseURL,
+            url: "/bin/execute",
+            method: "post",
+            headers: {
+                "Content-Type": "multipart/form-data"
+            },
+            data: formData,
+        });
+    },
+    // StageLessShellCodeGen(data:{listener:string,arch:string,format:string}){
+    //     return request({
+    //         url:"/shellcode/stageless",
+    //         method:"POST",
+    //         data:data,
+    //         responseType: 'blob',
+    //     })
+    //
+    // },
+    StageShellCodeGen(data:{listener:string,port:string,format:string}){
+        return request({
+            url:"/shellcode/stage",
+            method:"POST",
+            data:data,
+            responseType: 'blob',
+        })
+
     }
 
 }

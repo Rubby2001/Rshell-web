@@ -129,6 +129,15 @@ const router = createRouter({
                         component: () => import('@/views/client/View/ClientShell.vue')
                     },
                     {
+                        path: '/client/socks5',
+                        name: 'Socks5',
+                        meta: {
+                            title: 'Socks5',
+                            permiss: 2
+                        },
+                        component: () => import('@/views/client/View/ClientSocks5.vue')
+                    },
+                    {
                         path: '/client/files',
                         name: 'Files',
                         meta: {

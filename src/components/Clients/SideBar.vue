@@ -30,6 +30,12 @@ const items = [
   },
   {
     icon: "Odometer",
+    index: '/client/socks5',
+    title: "Socks5",
+    permiss: "2"
+  },
+  {
+    icon: "Odometer",
     index: '/client/downloads',
     title: "Downloads",
     permiss: "2"

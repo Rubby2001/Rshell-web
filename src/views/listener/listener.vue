@@ -95,15 +95,24 @@ const addListener = async()=>{
   if (formData.value.protocol ==="oss"){
     const res = await ListenerAPI.addListener({type:formData.value.protocol,listenAddress:ossData.value.endpoint+":"+formData.value.listenAddress+":"+formData.value.connectAddress+":"+ossData.value.bucketName,connectAddress:ossData.value.endpoint+":"+formData.value.listenAddress+":"+formData.value.connectAddress+":"+ossData.value.bucketName})
     if(res.status === 200){
-      ElMessage.success("添加成功")
-      await getListenerList()
+      if(res.data.status === 200){
+        ElMessage.success("添加成功")
+        await getListenerList()
+      }else{
+        ElMessage.error(res.data.data)
+      }
+
     }
     addListenerDialogVisible.value = false
   }else{
     const res = await ListenerAPI.addListener({type:formData.value.protocol,listenAddress:formData.value.listenAddress,connectAddress:formData.value.connectAddress})
     if(res.status === 200){
-      ElMessage.success("添加成功")
-      await getListenerList()
+      if(res.data.status === 200){
+        ElMessage.success("添加成功")
+        await getListenerList()
+      }else{
+        ElMessage.error(res.data.data)
+      }
     }
     addListenerDialogVisible.value = false
   }

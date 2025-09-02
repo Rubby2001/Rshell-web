@@ -19,7 +19,6 @@ let watermark = reactive({
     <h1 style="margin-left: 2%;margin-top: 20px">客户端</h1>
     <SideBar></SideBar>
     <div class="content-box" :class="{ 'content-collapse': SideBar.collapse }">
-<!--      <TagsView></TagsView>-->
       <div class="content">
         <router-view v-slot="{ Component }">
           <transition name="move" mode="out-in">

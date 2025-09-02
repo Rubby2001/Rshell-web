@@ -47,7 +47,7 @@ const handleDownload = (row :any) =>{
     type: 'warning',
   })
       .then(async () => {
-        ElMessage.warning("后台下载中，请勿关闭客户端，并保持网络畅通")
+        ElMessage.warning("后台下载中...")
         try {
           const res = await ClientAPI.download_downloaded_file({uid:uid,filePath:row.filePath});
           if (res.status == 200) {
