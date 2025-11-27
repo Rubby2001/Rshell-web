@@ -239,7 +239,6 @@ export default{
         Socks5port: string;
         uid: string | null | LocationQueryValue[];
         UserName: string;
-        ConnectAddress: string;
         Password: string
     }){
         return request({
@@ -252,7 +251,6 @@ export default{
     OpenSocks5(data:{Socks5port: string;
         uid: string | null | LocationQueryValue[];
         UserName: string;
-        ConnectAddress: string;
         Password: string}){
         return request({
             url:"/socks5/open",
@@ -263,7 +261,6 @@ export default{
     CloseSocks5(data:{Socks5port: string;
         uid: string | null | LocationQueryValue[];
         UserName: string;
-        ConnectAddress: string;
         Password: string}){
         return request({
             url:"/socks5/close",
@@ -274,7 +271,6 @@ export default{
     DeleteSocks5(data:{Socks5port: string;
         uid: string | null | LocationQueryValue[];
         UserName: string;
-        ConnectAddress: string;
         Password: string}){
         return request({
             url:"/socks5/delete",

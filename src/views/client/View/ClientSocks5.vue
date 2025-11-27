@@ -7,7 +7,7 @@
     <br>
     <el-table :data="tableData">
       <el-table-column prop="Type" label="类型"/>
-      <el-table-column prop="ConnectAddress" label="回连地址"/>
+<!--      <el-table-column prop="ConnectAddress" label="回连地址"/>-->
       <el-table-column prop="Socks5port" label="Socks5端口"/>
       <el-table-column prop="UserName" label="用户名"/>
       <el-table-column prop="Password" label="密码"/>
@@ -30,9 +30,9 @@
     <el-dialog v-model="dialogVisible" title="新增Socks5代理" width="500px">
       <el-form :model="formData" label-width="120px">
       <!-- 监听地址 -->
-      <el-form-item label="外网回连地址">
-        <el-input v-model="formData.connectAddress" :placeholder="'外网回连地址（xxx.xxx.xxx.xxx:9999)'"/>
-      </el-form-item>
+<!--      <el-form-item label="外网回连地址">-->
+<!--        <el-input v-model="formData.connectAddress" :placeholder="'外网回连地址（xxx.xxx.xxx.xxx:9999)'"/>-->
+<!--      </el-form-item>-->
 
       <!-- 连接地址 -->
       <el-form-item :label="'Socks5端口'">
@@ -83,7 +83,7 @@ const getSocks5List = async()=>{
   }
 }
 const startScoks5 = async()=>{
-  const res = await ClientAPI.startSocks5({Password: formData.password, Socks5port: formData.socks5port, UserName: formData.username, uid:uid,ConnectAddress:formData.connectAddress})
+  const res = await ClientAPI.startSocks5({Password: formData.password, Socks5port: formData.socks5port, UserName: formData.username, uid:uid})
   if(res.status === 200){
     if(res.data.status === 200) {
       ElMessage.success("添加成功")
@@ -98,7 +98,7 @@ const startScoks5 = async()=>{
 
 }
 const handleClose = async(row :any)=>{
-  const res = await ClientAPI.CloseSocks5({Password: row.Password, Socks5port: row.Socks5port, UserName: row.UserName, uid:uid,ConnectAddress:row.ConnectAddress})
+  const res = await ClientAPI.CloseSocks5({Password: row.Password, Socks5port: row.Socks5port, UserName: row.UserName, uid:uid})
   if (res.status ===200){
     if(res.data.status === 200){
       ElMessage.success("关闭成功")
@@ -110,7 +110,7 @@ const handleClose = async(row :any)=>{
   }
 }
 const handleOpen = async(row :any)=>{
-  const res = await ClientAPI.OpenSocks5({Password: row.Password, Socks5port: row.Socks5port, UserName: row.UserName, uid:uid,ConnectAddress:row.ConnectAddress})
+  const res = await ClientAPI.OpenSocks5({Password: row.Password, Socks5port: row.Socks5port, UserName: row.UserName, uid:uid})
   if (res.status ===200){
     if(res.data.status === 200){
       ElMessage.success("开启成功")
@@ -122,7 +122,7 @@ const handleOpen = async(row :any)=>{
   }
 }
 const handleDelete = async(row :any)=>{
-  const res = await ClientAPI.DeleteSocks5({Password: row.Password, Socks5port: row.Socks5port, UserName: row.UserName, uid:uid,ConnectAddress:row.ConnectAddress})
+  const res = await ClientAPI.DeleteSocks5({Password: row.Password, Socks5port: row.Socks5port, UserName: row.UserName, uid:uid})
   if (res.status ===200){
     if(res.data.status === 200){
       ElMessage.success("删除成功")
