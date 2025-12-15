@@ -142,7 +142,7 @@ tags.clearTags()
 
     </div>
     <div class="copyright">
-      <span>github.com/Rubby2001</span>
+      <span>https://github.com/Rubby2001/Rshell---A-Cross-Platform-C2</span>
     </div>
 <!--    <el-dialog v-model="dialogVisible" title="请选择服务端地址" width="30%">-->
 <!--      <div style="margin-bottom: 15px;">-->

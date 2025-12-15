@@ -13,21 +13,9 @@ const tags = useTagsStore();
 const users = useUserStore();
 const route = useRoute();
 
-const wartermarkText = computed(() => {
-  return `Rshell-${users.username}`;
-});
-let watermark = reactive({
-  text: wartermarkText.value,
-  show: true, // 控制水印的显示
-});
-// 监听路由变化
-watch(route, (newRoute) => {
-  // 设置不需要水印的白名单路由
-  watermark.show = newRoute.path !== '/login';
-});
 </script>
 <template>
-  <div v-if="watermark.show" v-watermark="watermark">
+  <div>
     <Header></Header>
     <SideBar></SideBar>
     <div class="content-box" :class="{ 'content-collapse': SideBar.collapse }">
