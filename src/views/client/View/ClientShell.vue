@@ -181,6 +181,7 @@ const modeOptions = [
   { value: 'execute-assembly', label: 'Execute Assembly(.net程序内存执行)' },
   { value: 'inline-bin', label: 'Inline Bin(其他exe程序内存执行)' },
   { value: 'shellcode-inject', label: 'shellcode执行(执行shellcode,上线其他C2等)' },
+  { value: 'inline-execute', label: 'Inline Execute(执行BOF)' },
 ]
 
 // 触发隐藏的文件输入框
