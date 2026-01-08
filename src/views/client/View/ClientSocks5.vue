@@ -467,12 +467,16 @@ const getSocks5List = async () => {
   try {
     const res = await ClientAPI.getSocks5List({ uid });
     if (res.status === 200) {
-      if(res.data.data) {
+      // 检查 res.data.data 是否存在且为数组，否则置空数组
+      if (res.data.data && Array.isArray(res.data.data)) {
         tableData.value = res.data.data.map((item: any) => ({
           ...item,
           loading: false,
           deleting: false
         }));
+      } else {
+        // 当 data 为 null、undefined 或不是数组时，清空表格
+        tableData.value = [];
       }
     }
   } catch (error) {
