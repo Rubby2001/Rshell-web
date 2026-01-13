@@ -108,6 +108,18 @@
             </el-button>
           </el-tooltip>
 
+          <el-tooltip content="打开交互式终端" placement="top">
+            <el-button
+                type="success"
+                @click="openInteractiveTerminal"
+                size="default"
+                class="action-button"
+            >
+              <el-icon><Monitor /></el-icon>
+              交互式终端
+            </el-button>
+          </el-tooltip>
+
           <!-- 这里可以继续添加其他小按钮 -->
           <!-- 示例：添加其他功能按钮 -->
           <!--
@@ -308,11 +320,156 @@
         </div>
       </template>
     </el-dialog>
+
+    <el-dialog
+        v-model="interactiveDialogVisible"
+        title="交互式终端"
+        width="90%"
+        :fullscreen="isFullscreen"
+        class="interactive-terminal-dialog"
+        :destroy-on-close="true"
+    >
+      <template #header>
+        <div class="dialog-title">
+          <div class="title-left">
+            <el-icon class="dialog-icon"><Monitor /></el-icon>
+            <div class="title-content">
+              <h3 class="title-text">交互式终端</h3>
+              <div class="title-subtext">
+<!--                <el-tag size="small" type="info" effect="plain">-->
+<!--                  <el-icon><User /></el-icon>-->
+<!--                  UID: {{ uid }}-->
+<!--                </el-tag>-->
+                <el-tag size="small" type="primary" effect="plain" v-if="terminalStatus.connected">
+                  <el-icon><Connection /></el-icon>
+                  实时连接
+                </el-tag>
+              </div>
+            </div>
+          </div>
+          <div class="dialog-actions">
+<!--            <el-tooltip content="重新连接" placement="bottom">-->
+<!--              <el-button-->
+<!--                  type="warning"-->
+<!--                  circle-->
+<!--                  size="small"-->
+<!--                  @click="reconnectTerminal"-->
+<!--                  :icon="Refresh"-->
+<!--                  :disabled="!terminalStatus.connected"-->
+<!--              />-->
+<!--            </el-tooltip>-->
+            <el-tooltip :content="isFullscreen ? '退出全屏' : '全屏'" placement="bottom">
+              <el-button
+                  type="primary"
+                  circle
+                  size="small"
+                  @click="toggleFullscreen"
+                  :icon="isFullscreen ? Fold : Expand"
+              />
+            </el-tooltip>
+            <el-tooltip content="断开连接" placement="bottom">
+              <el-button
+                  type="danger"
+                  circle
+                  size="small"
+                  @click="disconnectTerminal"
+                  :icon="SwitchButton"
+              />
+            </el-tooltip>
+          </div>
+        </div>
+      </template>
+      <div class="terminal-controls">
+<!--        <div class="controls-left">-->
+<!--          <el-button-group class="control-buttons">-->
+<!--            <el-tooltip content="清空终端" placement="top">-->
+<!--              <el-button-->
+<!--                  size="small"-->
+<!--                  @click="clearTerminal"-->
+<!--                  :icon="Delete"-->
+<!--                  plain-->
+<!--              >-->
+<!--                清空-->
+<!--              </el-button>-->
+<!--            </el-tooltip>-->
+<!--            <el-tooltip content="复制选中内容" placement="top">-->
+<!--              <el-button-->
+<!--                  size="small"-->
+<!--                  @click="copySelectedText"-->
+<!--                  :icon="CopyDocument"-->
+<!--                  plain-->
+<!--              >-->
+<!--                复制-->
+<!--              </el-button>-->
+<!--            </el-tooltip>-->
+<!--            <el-tooltip content="粘贴内容" placement="top">-->
+<!--              <el-button-->
+<!--                  size="small"-->
+<!--                  @click="pasteToTerminal"-->
+<!--                  :icon="DocumentCopy"-->
+<!--                  plain-->
+<!--              >-->
+<!--                粘贴-->
+<!--              </el-button>-->
+<!--            </el-tooltip>-->
+<!--          </el-button-group>-->
+<!--        </div>-->
+<!--        <div class="controls-right">-->
+<!--          <el-tooltip content="调整字体大小" placement="top">-->
+<!--            <div class="font-size-control">-->
+<!--              <el-icon><Sort /></el-icon>  &lt;!&ndash; 修改这里 &ndash;&gt;-->
+<!--              <el-slider-->
+<!--                  v-model="fontSize"-->
+<!--                  :min="10"-->
+<!--                  :max="24"-->
+<!--                  :step="1"-->
+<!--                  style="width: 100px;"-->
+<!--                  @change="updateTerminalFontSize"-->
+<!--                  show-stops-->
+<!--              />-->
+<!--              <span class="font-size-label">{{ fontSize }}px</span>-->
+<!--            </div>-->
+<!--          </el-tooltip>-->
+<!--        </div>-->
+      </div>
+
+      <!-- 终端容器 -->
+      <div class="terminal-wrapper" ref="terminalRef">
+        <!-- Xterm.js终端将在这里渲染 -->
+      </div>
+
+      <template #footer>
+        <div class="terminal-status-bar">
+          <div class="status-left">
+            <div class="status-indicator" :class="terminalStatus.connected ? 'connected' : 'disconnected'">
+              <div class="status-dot"></div>
+              <span class="status-text">{{ terminalStatus.text }}</span>
+            </div>
+<!--            <el-divider direction="vertical" />-->
+<!--            <div class="connection-info">-->
+<!--              <el-icon><Link /></el-icon>-->
+<!--              <span class="info-text">{{ shortWsEndpoint }}</span>-->
+<!--            </div>-->
+<!--            <el-divider direction="vertical" />-->
+<!--            <div class="terminal-info">-->
+<!--              <el-icon><DataLine /></el-icon>-->
+<!--              <span class="info-text">尺寸: {{ terminalCols }}x{{ terminalRows }}</span>-->
+<!--            </div>-->
+          </div>
+          <div class="status-right">
+            <el-tag size="small" type="info" effect="plain">
+              <el-icon><Clock /></el-icon>
+              连接时长: {{ connectionDuration }}
+            </el-tag>
+          </div>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, computed,watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import ClientAPI from '@/api/clients'
 import { useRoute } from "vue-router"
@@ -331,10 +488,26 @@ import {
   EditPen,
   View,
   Timer,
-  Key
+  Key,
+  CopyDocument,
+  Refresh,
+  FullScreen,
+  SwitchButton,
+  DocumentCopy,
+  Link,
+  DataLine,
+  Expand,           // 用于全屏图标
+  Fold,             // 用于退出全屏图标
+  Sort              // 用于字体大小图标
 } from '@element-plus/icons-vue'
+import { Terminal } from 'xterm'
+import { FitAddon } from '@xterm/addon-fit'
+import { WebLinksAddon } from '@xterm/addon-web-links'
+import 'xterm/css/xterm.css'
+import { v4 as uuidv4 } from 'uuid'
+import request from "@/utils/request";
 
-// 保持您原来的所有代码逻辑不变
+const sessionId = ref('')
 const commandHistory = useCommandHistoryStore();
 const route = useRoute()
 
@@ -571,6 +744,553 @@ const resetDialog = () => {
   if (fileInputRef.value) {
     fileInputRef.value.value = ''
   }
+}
+const interactiveDialogVisible = ref(false)
+const isFullscreen = ref(false)
+const terminalRef = ref(null)
+const reconnectAttempts = ref(0)
+const MAX_RECONNECT_ATTEMPTS = 5
+let reconnectTimeout = null
+let autoReconnect = true // 是否自动重连
+
+// 3. 新增终端相关变量
+let term = null
+let fitAddon = null
+let ws = null
+
+// 4. 新增终端状态管理
+const terminalStatus = ref({
+  connected: false,
+  text: '未连接',
+  type: 'info'
+})
+
+// 5. 计算WebSocket端点
+const wsEndpoint = computed(() => {
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+  const host = window.location.host
+  // 包含uid和sessionId
+  return `${protocol}//${host}/api/ws/interactive/${uid}/${sessionId.value}`
+})
+
+const generateSessionId = () => {
+  // 使用更精确的标识：uid + 时间戳 + 随机数
+  const timestamp = Date.now()
+  const random = Math.random().toString(36).substr(2, 9)
+  return `${uid}_${timestamp}_${random}`
+}
+
+// 6. 新增方法
+const openInteractiveTerminal = async () => {
+  // 重置重连状态
+  reconnectAttempts.value = 0
+  autoReconnect = true
+
+  // 生成唯一的会话ID
+  sessionId.value = generateSessionId()
+  interactiveDialogVisible.value = true
+
+  await nextTick()
+
+  try {
+    await initializeTerminal()
+    await connectWebSocket()
+  } catch (error) {
+    console.error('打开终端失败:', error)
+    ElMessage.error('打开终端失败: ' + error.message)
+  }
+}
+
+
+const initializeTerminal = () => {
+  if (term) {
+    term.dispose()
+  }
+
+  term = new Terminal({
+    cursorBlink: true,
+    fontSize: 14,
+    fontFamily: 'Consolas, "Courier New", monospace',
+    theme: {
+      background: '#1e1e1e',
+      foreground: '#ffffff',
+      cursor: '#ffffff'
+    }
+  })
+
+  fitAddon = new FitAddon()
+  term.loadAddon(fitAddon)
+  term.loadAddon(new WebLinksAddon())
+
+  term.open(terminalRef.value)
+  fitAddon.fit()
+
+  // 处理用户输入
+  term.onData(data => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: 'input', data }))
+    }
+  })
+
+  term.onResize(({ cols, rows }) => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: 'resize', cols, rows }))
+    }
+  })
+}
+
+// 新增一个获取WebSocket认证token的函数
+// 修改getWebSocketAuth函数
+const getWebSocketAuth = async () => {
+  try {
+    const response = await request({
+      url: `/ws/auth/${uid}`,
+      method: 'GET'
+    })
+    return response.data
+  } catch (error) {
+    console.error('获取WebSocket认证失败:', error)
+    ElMessage.error('认证失败: ' + (error.response?.data?.error || error.message))
+    throw error
+  }
+}
+let heartbeatInterval = null
+let lastPongTime = null
+
+const startHeartbeat = () => {
+  stopHeartbeat()
+  lastPongTime = Date.now()
+
+  heartbeatInterval = setInterval(() => {
+    // 先检查是否太久没收到响应
+    if (Date.now() - lastPongTime > 45000) { // 改为45秒超时（考虑网络延迟）
+      console.warn('心跳超时，重新连接', Date.now() - lastPongTime, 'ms')
+      if (ws) ws.close()
+      return
+    }
+
+    // 发送心跳
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      try {
+        ws.send(JSON.stringify({ type: 'heartbeat' }))
+        console.log('发送心跳，等待响应...')
+      } catch (e) {
+        console.error('发送心跳失败:', e)
+      }
+    }
+  }, 15000) // 改为15秒发送一次心跳（缩短间隔）
+}
+
+const stopHeartbeat = () => {
+  if (heartbeatInterval) {
+    clearInterval(heartbeatInterval)
+    heartbeatInterval = null
+  }
+}
+
+
+// 修改连接WebSocket的方法
+// 修改connectWebSocket函数
+const connectWebSocket = async () => {
+  if (ws) {
+    ws.close()
+  }
+
+  // 清理可能的重连定时器
+  if (reconnectTimeout) {
+    clearTimeout(reconnectTimeout)
+    reconnectTimeout = null
+  }
+
+  updateTerminalStatus('连接中...', 'warning')
+
+  try {
+    // 1. 先获取WebSocket专用token
+    const authResponse = await getWebSocketAuth()
+    const wsToken = authResponse.token
+
+    // 2. 使用专用token连接WebSocket
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    const host = window.location.host
+    ws = new WebSocket(
+        `${protocol}//${host}/api/ws/interactive/${uid}/${sessionId.value}?auth=${encodeURIComponent(wsToken)}`
+    )
+
+    // 添加认证响应处理
+    let authenticated = false
+
+    ws.onopen = () => {
+      updateTerminalStatus('认证中...', 'warning')
+      console.log('WebSocket连接已建立')
+      startHeartbeat()
+    }
+
+    ws.onmessage = (event) => {
+      lastPongTime = Date.now()
+      try {
+        const data = JSON.parse(event.data)
+
+        // 处理心跳响应
+        if (data.type === 'heartbeat_response') {
+          return
+        }
+
+        // 首先检查认证响应
+        if (data.type === 'auth_response') {
+          if (data.success) {
+            authenticated = true
+            updateTerminalStatus('已连接', 'success')
+            console.log('WebSocket认证成功')
+
+            // 重置重连计数
+            reconnectAttempts.value = 0
+
+            // 认证成功后发送初始化信息
+            const { cols, rows } = term
+            ws.send(JSON.stringify({
+              type: 'init',
+              uid: uid,
+              sessionId: sessionId.value,
+              cols: cols,
+              rows: rows
+            }))
+          } else {
+            console.error('认证失败:', data.message)
+            term.writeln(`\x1b[31m✗ 认证失败: ${data.message}\x1b[0m`)
+            updateTerminalStatus('认证失败', 'danger')
+            ws.close()
+          }
+          return
+        }
+
+        // 认证通过后才处理其他消息
+        if (!authenticated) {
+          console.warn('收到未认证的消息')
+          term.writeln('\x1b[31m✗ 收到未认证的消息\x1b[0m')
+          ws.close()
+          return
+        }
+
+        switch (data.type) {
+          case 'output':
+            term.write(data.data)
+            break
+          case 'error':
+            console.error('服务器错误:', data.message)
+            term.writeln(`\x1b[31m错误: ${data.message}\x1b[0m`)
+            break
+          case 'session_info':
+            console.log('会话信息:', data.message)
+            term.writeln(`\x1b[33m${data.message}\x1b[0m`)
+            break
+          default:
+            console.log('收到未知类型消息:', data.type)
+        }
+      } catch (e) {
+        // 可能是非JSON的终端输出
+        term.write(event.data)
+      }
+    }
+
+    ws.onerror = (error) => {
+      console.error('WebSocket错误:', error)
+      updateTerminalStatus('连接错误', 'danger')
+
+      if (term) {
+        term.writeln('\x1b[31m✗ 连接错误，请检查网络\x1b[0m')
+      }
+
+      // 立即尝试重连
+      scheduleReconnect()
+    }
+
+    ws.onclose = (event) => {
+      console.log(`WebSocket连接关闭，代码: ${event.code}, 原因: ${event.reason}`)
+      updateTerminalStatus('已断开', 'info')
+
+      if (term) {
+        term.writeln('\x1b[33m✗ 连接已断开，尝试重新连接...\x1b[0m')
+      }
+
+      stopHeartbeat()
+
+      // 如果不是正常关闭，则尝试重连
+      if (interactiveDialogVisible.value && autoReconnect) {
+        scheduleReconnect()
+      }
+    }
+
+    // 设置连接超时
+    setTimeout(() => {
+      if (ws && ws.readyState === WebSocket.CONNECTING) {
+        console.warn('WebSocket连接超时')
+        term.writeln('\x1b[31m✗ 连接超时\x1b[0m')
+        ws.close()
+        updateTerminalStatus('连接超时', 'danger')
+
+        // 超时后也尝试重连
+        scheduleReconnect()
+      }
+    }, 10000)
+
+  } catch (error) {
+    console.error('WebSocket连接失败:', error)
+    updateTerminalStatus('认证失败', 'danger')
+
+    if (term) {
+      term.writeln('\x1b[31m✗ 认证失败，无法连接终端\x1b[0m')
+    }
+
+    ElMessage.error('终端连接失败: ' + error.message)
+
+    // 连接失败也尝试重连
+    scheduleReconnect()
+  }
+}
+
+const updateTerminalStatus = (text, type) => {
+  terminalStatus.value = {
+    connected: type === 'success',
+    text,
+    type
+  }
+}
+
+const disconnectTerminal = (manual = true) => {
+  // 如果是手动关闭，停止自动重连
+  if (manual) {
+    autoReconnect = false
+    reconnectAttempts.value = 0
+  }
+
+  // 清理重连定时器
+  if (reconnectTimeout) {
+    clearTimeout(reconnectTimeout)
+    reconnectTimeout = null
+  }
+
+  stopHeartbeat()
+
+  if (ws) {
+    if (ws.readyState === WebSocket.OPEN && manual) {
+      // 手动关闭时发送断开消息
+      try {
+        ws.send(JSON.stringify({
+          type: 'close',
+          uid: uid,
+          sessionId: sessionId.value
+        }))
+      } catch (e) {
+        console.warn('发送关闭消息失败:', e)
+      }
+    }
+    ws.close()
+    ws = null
+  }
+
+  // 重置状态
+  if (manual) {
+    if (term) {
+      term.dispose()
+      term = null
+    }
+    sessionId.value = ''
+    interactiveDialogVisible.value = false
+  }
+}
+
+const toggleFullscreen = () => {
+  isFullscreen.value = !isFullscreen.value
+  nextTick(() => {
+    if (fitAddon) {
+      setTimeout(() => fitAddon.fit(), 100)
+    }
+  })
+}
+
+// 7. 监听对话框关闭
+watch(interactiveDialogVisible, (newVal) => {
+  if (!newVal && term) {
+    disconnectTerminal()
+  }
+})
+
+// 8. 监听窗口大小变化
+onMounted(() => {
+  window.addEventListener('resize', handleResize)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+  disconnectTerminal()
+})
+
+const handleResize = () => {
+  if (fitAddon) {
+    fitAddon.fit()
+  }
+}
+// 添加新的响应式变量
+const fontSize = ref(14)
+const terminalCols = ref(80)
+const terminalRows = ref(24)
+const connectionStartTime = ref(null)
+const connectionDuration = ref('00:00')
+
+// 添加计算属性
+const shortWsEndpoint = computed(() => {
+  const url = wsEndpoint.value
+  return url.replace(/^wss?:\/\//, '').replace(/\/ws\/interactive\/.*$/, '')
+})
+
+const reconnectTerminal = async () => {
+  // 停止自动重连（如果是手动触发）
+  autoReconnect = false
+
+  ElMessage.info('正在重新连接...')
+
+  // 清理现有连接
+  stopHeartbeat()
+  if (ws) {
+    ws.close()
+    ws = null
+  }
+
+  // 重新生成会话ID
+  sessionId.value = generateSessionId()
+
+  try {
+    await initializeTerminal()
+    await connectWebSocket()
+
+    // 重置重连计数
+    reconnectAttempts.value = 0
+    autoReconnect = true
+
+    ElMessage.success('重新连接成功')
+  } catch (error) {
+    console.error('重连失败:', error)
+    ElMessage.error('重连失败: ' + error.message)
+
+    // 重置为自动重连模式
+    autoReconnect = true
+  }
+}
+const scheduleReconnect = () => {
+  // 如果不是自动重连模式或已达到最大重试次数，则停止
+  if (!autoReconnect || reconnectAttempts.value >= MAX_RECONNECT_ATTEMPTS) {
+    console.log('已达到最大重连次数或手动取消重连')
+    return
+  }
+
+  // 增加重连计数
+  reconnectAttempts.value++
+
+  // 指数退避策略
+  const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.value - 1), 30000)
+
+  console.log(`将在 ${delay}ms 后尝试第 ${reconnectAttempts.value} 次重连`)
+
+  reconnectTimeout = setTimeout(async () => {
+    if (interactiveDialogVisible.value) {
+      try {
+        console.log(`尝试第 ${reconnectAttempts.value} 次重连...`)
+
+        // 清理现有连接
+        stopHeartbeat()
+        if (ws) {
+          ws.close()
+          ws = null
+        }
+
+        // 重新生成会话ID
+        sessionId.value = generateSessionId()
+
+        // 重新初始化并连接
+        await initializeTerminal()
+        await connectWebSocket()
+
+        // 成功连接后重置计数
+        reconnectAttempts.value = 0
+        ElMessage.success('自动重连成功')
+      } catch (error) {
+        console.error(`第 ${reconnectAttempts.value} 次重连失败:`, error)
+        // 继续尝试重连
+        scheduleReconnect()
+      }
+    }
+  }, delay)
+}
+
+const clearTerminal = () => {
+  if (term) {
+    term.clear()
+    ElMessage.success('终端已清空')
+  }
+}
+
+const copySelectedText = async () => {
+  try {
+    const selectedText = window.getSelection().toString()
+    if (selectedText) {
+      await navigator.clipboard.writeText(selectedText)
+      ElMessage.success('已复制选中内容')
+    } else {
+      ElMessage.info('请先选中要复制的内容')
+    }
+  } catch (err) {
+    ElMessage.error('复制失败')
+  }
+}
+
+const pasteToTerminal = async () => {
+  try {
+    const text = await navigator.clipboard.readText()
+    if (text && term) {
+      term.write(text)
+    }
+  } catch (err) {
+    ElMessage.error('粘贴失败')
+  }
+}
+
+const updateTerminalFontSize = () => {
+  if (term) {
+    term.options.fontSize = fontSize.value
+    term.refresh(0, term.rows - 1)
+  }
+}
+
+// 在连接成功时启动计时器
+watch(() => terminalStatus.value.connected, (connected) => {
+  if (connected) {
+    connectionStartTime.value = Date.now()
+    startConnectionTimer()
+  } else {
+    connectionStartTime.value = null
+    connectionDuration.value = '00:00'
+  }
+})
+
+const startConnectionTimer = () => {
+  const timer = setInterval(() => {
+    if (!connectionStartTime.value) {
+      clearInterval(timer)
+      return
+    }
+    const duration = Date.now() - connectionStartTime.value
+    const minutes = Math.floor(duration / 60000)
+    const seconds = Math.floor((duration % 60000) / 1000)
+    connectionDuration.value = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+  }, 1000)
+}
+
+// 监听终端尺寸变化
+if (term) {
+  term.onResize(({ cols, rows }) => {
+    terminalCols.value = cols
+    terminalRows.value = rows
+  })
 }
 
 onMounted(() => {
@@ -1159,6 +1879,414 @@ onMounted(() => {
   .action-button {
     padding: 6px 12px;
     font-size: 13px;
+  }
+}
+/* 新增交互式终端对话框样式 */
+.interactive-terminal-dialog :deep(.el-dialog) {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.interactive-terminal-dialog :deep(.el-dialog__header) {
+  padding: 16px 20px;
+  background: #1e1e1e;
+  border-bottom: 1px solid #333;
+  margin-right: 0;
+}
+
+.interactive-terminal-dialog :deep(.el-dialog__body) {
+  padding: 0;
+  background: #1e1e1e;
+}
+
+.interactive-terminal-dialog .dialog-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  color: #ffffff;
+}
+
+.dialog-title span {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.terminal-wrapper {
+  width: 100%;
+  height: 70vh;
+  min-height: 400px;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.terminal-wrapper :deep(.xterm) {
+  height: 100%;
+}
+
+.terminal-wrapper :deep(.xterm-viewport) {
+  scrollbar-width: thin;
+  scrollbar-color: #555 #2d2d2d;
+}
+
+.terminal-wrapper :deep(.xterm-viewport::-webkit-scrollbar) {
+  width: 8px;
+}
+
+.terminal-wrapper :deep(.xterm-viewport::-webkit-scrollbar-track) {
+  background: #2d2d2d;
+}
+
+.terminal-wrapper :deep(.xterm-viewport::-webkit-scrollbar-thumb) {
+  background: #555;
+  border-radius: 4px;
+}
+
+.interactive-terminal-dialog :deep(.el-dialog__footer) {
+  padding: 12px 20px;
+  background: #f8f9fa;
+  border-top: 1px solid #dee2e6;
+}
+
+.terminal-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.connection-info {
+  font-size: 12px;
+  color: #909399;
+  font-family: 'Consolas', monospace;
+}
+
+.connection-info .el-icon {
+  margin-right: 4px;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .interactive-terminal-dialog {
+    width: 95% !important;
+  }
+
+  .terminal-wrapper {
+    height: 60vh;
+    min-height: 300px;
+  }
+
+  .dialog-title {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .dialog-actions {
+    margin-left: 0;
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+/* 美化交互式终端对话框 */
+.interactive-terminal-dialog :deep(.el-dialog) {
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.interactive-terminal-dialog :deep(.el-dialog__header) {
+  padding: 0;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.interactive-terminal-dialog .dialog-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  width: 100%;
+  color: #ffffff;
+}
+
+.title-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.dialog-icon {
+  font-size: 28px;
+  color: #00d4ff;
+  background: rgba(0, 212, 255, 0.1);
+  padding: 10px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 212, 255, 0.2);
+}
+
+.title-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.title-text {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+}
+
+.title-subtext {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* 终端控制工具栏 */
+.terminal-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 24px;
+  background: #252525;
+  border-bottom: 1px solid #333;
+}
+
+.controls-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.control-buttons .el-button {
+  border-color: #444;
+  background: #333;
+  color: #ddd;
+  transition: all 0.3s ease;
+}
+
+.control-buttons .el-button:hover {
+  background: #444;
+  border-color: #00d4ff;
+  color: #00d4ff;
+  transform: translateY(-1px);
+}
+
+.controls-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.font-size-control {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 12px;
+  background: #333;
+  border-radius: 6px;
+  border: 1px solid #444;
+}
+
+.font-size-control .el-icon {
+  color: #00d4ff;
+}
+
+.font-size-label {
+  color: #ddd;
+  font-size: 12px;
+  min-width: 30px;
+  text-align: center;
+}
+
+/* 终端容器 */
+.terminal-wrapper {
+  width: 100%;
+  height: 70vh;
+  min-height: 400px;
+  padding: 0;
+  background: #0f0f0f;
+  box-sizing: border-box;
+  border-bottom: 1px solid #333;
+}
+
+.terminal-wrapper :deep(.xterm) {
+  height: 100%;
+  padding: 20px;
+}
+
+.terminal-wrapper :deep(.xterm-viewport) {
+  background: #0f0f0f;
+  scrollbar-width: thin;
+  scrollbar-color: #00d4ff #2d2d2d;
+}
+
+.terminal-wrapper :deep(.xterm-viewport::-webkit-scrollbar) {
+  width: 10px;
+}
+
+.terminal-wrapper :deep(.xterm-viewport::-webkit-scrollbar-track) {
+  background: #1a1a1a;
+  border-radius: 5px;
+}
+
+.terminal-wrapper :deep(.xterm-viewport::-webkit-scrollbar-thumb) {
+  background: linear-gradient(135deg, #00d4ff, #0099ff);
+  border-radius: 5px;
+}
+
+.terminal-wrapper :deep(.xterm-viewport::-webkit-scrollbar-thumb:hover) {
+  background: linear-gradient(135deg, #00a8cc, #0077cc);
+}
+
+/* 底部状态栏 */
+.interactive-terminal-dialog :deep(.el-dialog__footer) {
+  padding: 0;
+  background: #1a1a2e;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.terminal-status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 24px;
+  color: #ffffff;
+}
+
+.status-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.status-indicator.connected {
+  background: rgba(0, 212, 255, 0.15);
+  border: 1px solid rgba(0, 212, 255, 0.3);
+}
+
+.status-indicator.disconnected {
+  background: rgba(255, 100, 100, 0.15);
+  border: 1px solid rgba(255, 100, 100, 0.3);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff6464;
+  animation: pulse 2s infinite;
+}
+
+.status-indicator.connected .status-dot {
+  background: #00ff88;
+  animation: pulse-connected 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+@keyframes pulse-connected {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.7);
+  }
+  70% {
+    opacity: 0.7;
+    box-shadow: 0 0 0 6px rgba(0, 255, 136, 0);
+  }
+}
+
+.status-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: #000000;
+}
+
+.connection-info, .terminal-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #aaa;
+}
+
+.connection-info .el-icon, .terminal-info .el-icon {
+  color: #00d4ff;
+}
+
+.status-right .el-tag {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #ddd;
+  backdrop-filter: blur(10px);
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .interactive-terminal-dialog {
+    width: 95% !important;
+    margin: 10px !important;
+  }
+
+  .terminal-wrapper {
+    height: 60vh;
+    min-height: 300px;
+  }
+
+  .terminal-controls {
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .controls-left, .controls-right {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .dialog-title {
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+  }
+
+  .terminal-status-bar {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+
+  .status-left {
+    flex-wrap: wrap;
+    justify-content: center;
   }
 }
 </style>
