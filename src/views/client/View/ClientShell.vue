@@ -1,33 +1,5 @@
 <template>
   <div class="enhanced-terminal-container">
-    <!-- 顶部标题栏 -->
-<!--    <div class="terminal-header">-->
-<!--      <div class="header-left">-->
-<!--        <h2 class="terminal-title">-->
-<!--          <el-icon class="terminal-icon"><Monitor /></el-icon>-->
-<!--          终端控制台-->
-<!--        </h2>-->
-<!--        <div class="client-badge">-->
-<!--          <el-tag type="info" size="small" effect="dark">-->
-<!--            <el-icon><User /></el-icon>-->
-<!--            UID: {{ uid }}-->
-<!--          </el-tag>-->
-<!--        </div>-->
-<!--      </div>-->
-<!--      <div class="header-right">-->
-<!--        <el-tooltip content="清空终端输出" placement="bottom">-->
-<!--          <el-button type="info" size="small" circle @click="clearOutput">-->
-<!--            <el-icon><Delete /></el-icon>-->
-<!--          </el-button>-->
-<!--        </el-tooltip>-->
-<!--        <el-tooltip content="内存执行高级功能" placement="bottom">-->
-<!--          <el-button type="primary" @click="dialogVisible = true" plain>-->
-<!--            <el-icon><MagicStick /></el-icon>-->
-<!--            Windows内存执行-->
-<!--          </el-button>-->
-<!--        </el-tooltip>-->
-<!--      </div>-->
-<!--    </div>-->
 
     <!-- 主终端区域 -->
     <div class="main-terminal-area">
@@ -38,22 +10,17 @@
             <el-icon><Promotion /></el-icon>
             <span>命令输出</span>
           </div>
-<!--          <div class="output-stats">-->
-<!--            <el-tag size="small" type="info" effect="plain">-->
-<!--              <el-icon><Clock /></el-icon>-->
-<!--              自动刷新: 5s-->
-<!--            </el-tag>-->
-<!--          </div>-->
         </div>
 
         <div class="output-content" ref="outputRef">
           <div class="command-history" v-if="ShellStr">
-<!--            <div class="command-item" v-if="lastCommand">-->
-<!--              <span class="command-prompt">$</span>-->
-<!--              <span class="command-text">{{ lastCommand }}</span>-->
-<!--            </div>-->
-            <pre class="terminal-output">{{ ShellStr }}</pre>
+<!--            <pre class="terminal-output">{{ ShellStr }}</pre>-->
+            <pre
+                class="terminal-output"
+                v-html="ShellHtml"
+            ></pre>
           </div>
+
           <div class="empty-output" v-else>
             <el-empty description="暂无输出，请输入命令开始操作" />
           </div>
@@ -120,25 +87,6 @@
             </el-button>
           </el-tooltip>
 
-          <!-- 这里可以继续添加其他小按钮 -->
-          <!-- 示例：添加其他功能按钮 -->
-          <!--
-          <el-tooltip content="其他功能" placement="top">
-            <el-button type="success" size="default" class="action-button">
-              <el-icon><Folder /></el-icon>
-              文件管理
-            </el-button>
-          </el-tooltip>
-          -->
-
-          <!--
-          <el-tooltip content="其他功能" placement="top">
-            <el-button type="warning" size="default" class="action-button">
-              <el-icon><Tools /></el-icon>
-              工具
-            </el-button>
-          </el-tooltip>
-          -->
         </div>
       </div>
 
@@ -336,10 +284,6 @@
             <div class="title-content">
               <h3 class="title-text">交互式终端</h3>
               <div class="title-subtext">
-<!--                <el-tag size="small" type="info" effect="plain">-->
-<!--                  <el-icon><User /></el-icon>-->
-<!--                  UID: {{ uid }}-->
-<!--                </el-tag>-->
                 <el-tag size="small" type="primary" effect="plain" v-if="terminalStatus.connected">
                   <el-icon><Connection /></el-icon>
                   实时连接
@@ -348,16 +292,6 @@
             </div>
           </div>
           <div class="dialog-actions">
-<!--            <el-tooltip content="重新连接" placement="bottom">-->
-<!--              <el-button-->
-<!--                  type="warning"-->
-<!--                  circle-->
-<!--                  size="small"-->
-<!--                  @click="reconnectTerminal"-->
-<!--                  :icon="Refresh"-->
-<!--                  :disabled="!terminalStatus.connected"-->
-<!--              />-->
-<!--            </el-tooltip>-->
             <el-tooltip :content="isFullscreen ? '退出全屏' : '全屏'" placement="bottom">
               <el-button
                   type="primary"
@@ -380,57 +314,6 @@
         </div>
       </template>
       <div class="terminal-controls">
-<!--        <div class="controls-left">-->
-<!--          <el-button-group class="control-buttons">-->
-<!--            <el-tooltip content="清空终端" placement="top">-->
-<!--              <el-button-->
-<!--                  size="small"-->
-<!--                  @click="clearTerminal"-->
-<!--                  :icon="Delete"-->
-<!--                  plain-->
-<!--              >-->
-<!--                清空-->
-<!--              </el-button>-->
-<!--            </el-tooltip>-->
-<!--            <el-tooltip content="复制选中内容" placement="top">-->
-<!--              <el-button-->
-<!--                  size="small"-->
-<!--                  @click="copySelectedText"-->
-<!--                  :icon="CopyDocument"-->
-<!--                  plain-->
-<!--              >-->
-<!--                复制-->
-<!--              </el-button>-->
-<!--            </el-tooltip>-->
-<!--            <el-tooltip content="粘贴内容" placement="top">-->
-<!--              <el-button-->
-<!--                  size="small"-->
-<!--                  @click="pasteToTerminal"-->
-<!--                  :icon="DocumentCopy"-->
-<!--                  plain-->
-<!--              >-->
-<!--                粘贴-->
-<!--              </el-button>-->
-<!--            </el-tooltip>-->
-<!--          </el-button-group>-->
-<!--        </div>-->
-<!--        <div class="controls-right">-->
-<!--          <el-tooltip content="调整字体大小" placement="top">-->
-<!--            <div class="font-size-control">-->
-<!--              <el-icon><Sort /></el-icon>  &lt;!&ndash; 修改这里 &ndash;&gt;-->
-<!--              <el-slider-->
-<!--                  v-model="fontSize"-->
-<!--                  :min="10"-->
-<!--                  :max="24"-->
-<!--                  :step="1"-->
-<!--                  style="width: 100px;"-->
-<!--                  @change="updateTerminalFontSize"-->
-<!--                  show-stops-->
-<!--              />-->
-<!--              <span class="font-size-label">{{ fontSize }}px</span>-->
-<!--            </div>-->
-<!--          </el-tooltip>-->
-<!--        </div>-->
       </div>
 
       <!-- 终端容器 -->
@@ -445,16 +328,6 @@
               <div class="status-dot"></div>
               <span class="status-text">{{ terminalStatus.text }}</span>
             </div>
-<!--            <el-divider direction="vertical" />-->
-<!--            <div class="connection-info">-->
-<!--              <el-icon><Link /></el-icon>-->
-<!--              <span class="info-text">{{ shortWsEndpoint }}</span>-->
-<!--            </div>-->
-<!--            <el-divider direction="vertical" />-->
-<!--            <div class="terminal-info">-->
-<!--              <el-icon><DataLine /></el-icon>-->
-<!--              <span class="info-text">尺寸: {{ terminalCols }}x{{ terminalRows }}</span>-->
-<!--            </div>-->
           </div>
           <div class="status-right">
             <el-tag size="small" type="info" effect="plain">
@@ -506,6 +379,19 @@ import { WebLinksAddon } from '@xterm/addon-web-links'
 import 'xterm/css/xterm.css'
 import { v4 as uuidv4 } from 'uuid'
 import request from "@/utils/request";
+import AnsiToHtml from 'ansi-to-html'
+
+const ansiConverter = new AnsiToHtml({
+  fg: '#ffffff',
+  bg: '#1e1e1e',
+  newline: true,
+  escapeXML: true
+})
+
+const ShellHtml = computed(() => {
+  return ansiConverter.toHtml(ShellStr.value || '')
+})
+
 
 const sessionId = ref('')
 const commandHistory = useCommandHistoryStore();
