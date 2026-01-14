@@ -174,9 +174,9 @@
                     :status="getProgressStatus(Number(row.downloadPart))"
                     :stroke-width="8"
                 />
-                <div class="progress-time" v-if="Number(row.downloadPart) < 100">
-                  估计剩余：{{ estimateTime(row) }}
-                </div>
+<!--                <div class="progress-time" v-if="Number(row.downloadPart) < 100">-->
+<!--                  估计剩余：{{ estimateTime(row) }}-->
+<!--                </div>-->
               </div>
             </template>
           </el-table-column>
@@ -511,10 +511,7 @@ const formatTime = (timestamp: number) => {
 
 const getProgressStatus = (percentage: number) => {
   if (percentage === 100) return 'success'
-  if (percentage >= 75) return 'warning'
-  if (percentage >= 50) return ''
-  if (percentage >= 25) return 'exception'
-  return 'exception'
+  return ''
 }
 
 const estimateTime = (file: any) => {
