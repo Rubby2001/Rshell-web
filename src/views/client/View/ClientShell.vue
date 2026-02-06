@@ -317,7 +317,7 @@
       </div>
 
       <!-- 终端容器 -->
-      <div class="terminal-wrapper" ref="terminalRef">
+      <div class="terminal-wrapper" ref="terminalRef" style="color: #ffffff !important;">
         <!-- Xterm.js终端将在这里渲染 -->
       </div>
 
@@ -700,7 +700,23 @@ const initializeTerminal = () => {
     theme: {
       background: '#1e1e1e',
       foreground: '#ffffff',
-      cursor: '#ffffff'
+      cursor: '#ffffff',
+      black: '#000000',
+      red: '#ff6b6b',
+      green: '#51cf66',
+      yellow: '#ffd43b',
+      blue: '#74c0fc',
+      magenta: '#ff8787',
+      cyan: '#69db7c',
+      white: '#ffffff',
+      brightBlack: '#808080',
+      brightRed: '#ff8787',
+      brightGreen: '#51cf66',
+      brightYellow: '#ffd43b',
+      brightBlue: '#74c0fc',
+      brightMagenta: '#ff8787',
+      brightCyan: '#69db7c',
+      brightWhite: '#ffffff'
     }
   })
 
@@ -710,6 +726,16 @@ const initializeTerminal = () => {
 
   term.open(terminalRef.value)
   fitAddon.fit()
+
+  // 强制覆盖所有颜色为白色
+  if (terminalRef.value) {
+    terminalRef.value.style.color = '#ffffff'
+    // 遍历所有子元素
+    const allElements = terminalRef.value.querySelectorAll('*')
+    allElements.forEach((el) => {
+      el.style.color = '#ffffff'
+    })
+  }
 
   // 处理用户输入
   term.onData(data => {
@@ -1222,7 +1248,7 @@ onMounted(() => {
   margin: 0;
   font-size: 22px;
   font-weight: 700;
-  color: #2c3e50;
+  color: #ffffff;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -1274,7 +1300,7 @@ onMounted(() => {
   gap: 8px;
   font-size: 16px;
   font-weight: 600;
-  color: #2c3e50;
+  color: #ffffff;
 }
 
 .output-content {
@@ -1330,7 +1356,7 @@ onMounted(() => {
 
 .terminal-output {
   margin: 0;
-  color: #e6e6e6;
+  color: #ffffff;
   font-size: 14px;
   font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
   line-height: 1.5;
@@ -1474,7 +1500,7 @@ onMounted(() => {
 }
 
 .net-icon {
-  color: #9254de;
+  color: #ffffff;
 }
 
 .native-icon {
@@ -1836,8 +1862,9 @@ onMounted(() => {
 
 .interactive-terminal-dialog :deep(.el-dialog__footer) {
   padding: 12px 20px;
-  background: #f8f9fa;
-  border-top: 1px solid #dee2e6;
+  background: #1e1e1e;
+  border-top: 1px solid #333;
+  color: #ffffff;
 }
 
 .terminal-status {
@@ -1849,7 +1876,7 @@ onMounted(() => {
 
 .connection-info {
   font-size: 12px;
-  color: #909399;
+  color: #ffffff;
   font-family: 'Consolas', monospace;
 }
 
@@ -1927,7 +1954,7 @@ onMounted(() => {
   margin: 0;
   font-size: 20px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--theme-primary);
   letter-spacing: 0.5px;
 }
 
@@ -2174,5 +2201,23 @@ onMounted(() => {
     flex-wrap: wrap;
     justify-content: center;
   }
+}
+
+/* 额外的颜色覆盖 */
+.interactive-terminal-dialog :deep(.xterm) * {
+    color: #ffffff !important;
+}
+
+.interactive-terminal-dialog :deep(.xterm-color-0),
+.interactive-terminal-dialog :deep(.xterm-color-1),
+.interactive-terminal-dialog :deep(.xterm-color-2),
+.interactive-terminal-dialog :deep(.xterm-color-3),
+.interactive-terminal-dialog :deep(.xterm-color-4),
+.interactive-terminal-dialog :deep(.xterm-color-5),
+.interactive-terminal-dialog :deep(.xterm-color-6),
+.interactive-terminal-dialog :deep(.xterm-color-7),
+.interactive-terminal-dialog :deep(.xterm-color-8),
+.interactive-terminal-dialog :deep(.xterm-color-9) {
+    color: #ffffff !important;
 }
 </style>

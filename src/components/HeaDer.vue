@@ -3,17 +3,22 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { usePermissStore } from '@/stores/userpermiss'
-import { useSidebarStore } from '@/stores/sidebar'
+import { useThemeStore, type ThemeType } from '@/stores/theme'
 import {
   ArrowDown,
   User,
   Key,
   SwitchButton,
-  Expand,
-  Fold,
   Bell,
   QuestionFilled,
-  Setting
+  Setting,
+  Menu,
+  Close,
+  HomeFilled,
+  Monitor,
+  Service,
+  Connection,
+  Brush
 } from '@element-plus/icons-vue'
 import UserApi from '@/api/user'
 import { ElMessage, ElNotification } from 'element-plus'
@@ -22,7 +27,10 @@ import { cancelRequest } from "@/utils/request"
 const router = useRouter()
 const userinfo = useUserStore()
 const permiss = usePermissStore()
-const sidebar = useSidebarStore()
+const themeStore = useThemeStore()
+
+// 移动端导航展开状态
+const isMobileNavOpen = ref(false)
 
 const username = computed(() => userinfo.getUserName() || '用户')
 const userInitial = computed(() => username.value[0]?.toUpperCase() || 'U')
@@ -32,8 +40,8 @@ const extractColorByName = (name: string) => {
   if (!name) return '#409eff'
 
   const colors = [
-    '#409eff', '#67c23a', '#e6a23c', '#f56c6c',
-    '#909399', '#11d1d1', '#9254de', '#f759ab'
+    '#ff6b9d', '#ff9a9e', '#ff8fab', '#ffecd2',
+    '#fcb69f', '#fecfef', '#ff9a9e', '#ff6b9d'
   ]
 
   let hash = 0
@@ -63,27 +71,27 @@ const markAllAsRead = () => {
   ElMessage.success('已标记所有通知为已读')
 }
 
-// 切换侧边栏
-const toggleSidebar = () => {
-  sidebar.collapse = !sidebar.collapse
+// 切换移动端导航
+const toggleMobileNav = () => {
+  isMobileNavOpen.value = !isMobileNavOpen.value
 }
 
-onMounted(() => {
-  // 响应式侧边栏
-  if (document.body.clientWidth < 1500) {
-    sidebar.collapse = true
-  }
+// 主题切换相关
+const showThemeSelector = ref(false)
+const availableThemes: { label: string; value: ThemeType; icon: string }[] = [
+  { label: '粉色', value: 'pink', icon: '🌸' },
+  { label: '蓝色', value: 'blue', icon: '🔵' },
+  { label: '绿色', value: 'green', icon: '💚' },
+  { label: '紫色', value: 'purple', icon: '💜' },
+  { label: '橙色', value: 'orange', icon: '🧡' },
+  { label: '青色', value: 'teal', icon: '💎' }
+]
 
-  // 添加窗口resize监听
-  const handleResize = () => {
-    if (document.body.clientWidth < 1200) {
-      sidebar.collapse = true
-    }
-  }
-
-  window.addEventListener('resize', handleResize)
-  return () => window.removeEventListener('resize', handleResize)
-})
+const switchTheme = (theme: ThemeType) => {
+  themeStore.switchTheme(theme)
+  ElMessage.success(`已切换至${availableThemes.find(t => t.value === theme)?.label}主题`)
+  showThemeSelector.value = false
+}
 
 // 处理下拉菜单命令
 const handleCommand = async (command: string) => {
@@ -148,53 +156,76 @@ const handleLogout = async () => {
     ElMessage.error('登出失败，请重试')
   }
 }
-
-// 显示时间
-const currentTime = ref('')
-const updateTime = () => {
-  const now = new Date()
-  currentTime.value = now.toLocaleTimeString('zh-CN', {
-    hour12: false,
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-}
-
-// 初始化时间
-onMounted(() => {
-  updateTime()
-  setInterval(updateTime, 60000) // 每分钟更新一次
-})
 </script>
 
 <template>
   <header class="header-container">
     <!-- 左侧区域 -->
     <div class="header-left">
-      <!-- 侧边栏切换按钮 -->
+      <!-- 移动端导航切换按钮 -->
       <div
-          class="sidebar-toggle"
-          @click="toggleSidebar"
-          :title="sidebar.collapse ? '展开侧边栏' : '折叠侧边栏'"
+          class="mobile-nav-toggle"
+          @click="toggleMobileNav"
+          :title="isMobileNavOpen ? '收起导航' : '展开导航'"
       >
         <el-icon class="toggle-icon">
-          <component :is="sidebar.collapse ? Expand : Fold" />
+          <component :is="isMobileNavOpen ? Close : Menu" />
         </el-icon>
       </div>
 
       <!-- 应用标题 -->
-      <div class="app-title">
+      <div class="app-title" @click="router.push('/home')" style="cursor: pointer;">
         <span class="app-name">Rshell</span>
         <span class="app-subtitle">远程管理控制台</span>
       </div>
     </div>
 
-    <!-- 中间区域：当前时间 -->
+    <!-- 中间区域：导航栏 -->
     <div class="header-center">
-      <div class="current-time">
-        <el-icon class="time-icon"><Clock /></el-icon>
-        <span class="time-text">{{ currentTime }}</span>
-      </div>
+      <nav class="nav-menu" :class="{ 'open': isMobileNavOpen }">
+        <div class="nav-items">
+          <router-link
+              to="/home"
+              class="nav-item"
+              :class="{ 'nav-item-active': $route.path === '/home' }"
+          >
+            <el-icon class="nav-icon"><HomeFilled /></el-icon>
+            <span class="nav-text">首页</span>
+          </router-link>
+          <router-link
+              to="/Clients"
+              class="nav-item"
+              :class="{ 'nav-item-active': $route.path === '/Clients' }"
+          >
+            <el-icon class="nav-icon"><Monitor /></el-icon>
+            <span class="nav-text">客户端管理</span>
+          </router-link>
+          <router-link
+              to="/Listeners"
+              class="nav-item"
+              :class="{ 'nav-item-active': $route.path === '/Listeners' }"
+          >
+            <el-icon class="nav-icon"><Service /></el-icon>
+            <span class="nav-text">监听器管理</span>
+          </router-link>
+          <router-link
+              to="/Server"
+              class="nav-item"
+              :class="{ 'nav-item-active': $route.path === '/Server' || $route.path === '/WebDelivery' }"
+          >
+            <el-icon class="nav-icon"><Connection /></el-icon>
+            <span class="nav-text">客户端生成</span>
+          </router-link>
+          <router-link
+              to="/Settings"
+              class="nav-item"
+              :class="{ 'nav-item-active': $route.path === '/Settings' }"
+          >
+            <el-icon class="nav-icon"><Setting /></el-icon>
+            <span class="nav-text">系统设置</span>
+          </router-link>
+        </div>
+      </nav>
     </div>
 
     <!-- 右侧区域 -->
@@ -267,6 +298,40 @@ onMounted(() => {
 <!--        </div>-->
 <!--      </el-popover>-->
 
+      <!-- 主题切换按钮 -->
+      <el-popover
+          v-model:visible="showThemeSelector"
+          placement="bottom-end"
+          :width="240"
+          trigger="click"
+      >
+        <template #reference>
+          <div class="header-action theme-action" title="切换主题">
+            <span class="theme-emoji">🎨</span>
+          </div>
+        </template>
+
+        <div class="theme-selector">
+          <div class="theme-title">选择主题颜色</div>
+          <div class="theme-grid">
+            <div
+                v-for="theme in availableThemes"
+                :key="theme.value"
+                class="theme-item"
+                :class="{ 'theme-item-active': themeStore.currentTheme === theme.value }"
+                @click="switchTheme(theme.value)"
+                :title="theme.label"
+            >
+              <div
+                  class="theme-color-dot"
+                  :style="{ backgroundColor: themeStore.themeConfigs[theme.value].primary }"
+              ></div>
+              <span class="theme-label">{{ theme.label }}</span>
+            </div>
+          </div>
+        </div>
+      </el-popover>
+
       <!-- 用户信息 -->
       <div class="user-info">
         <div class="user-avatar-wrapper">
@@ -331,14 +396,15 @@ onMounted(() => {
   left: 0;
   right: 0;
   height: 60px;
-  background: linear-gradient(90deg, #ffffff 0%, #f8fafc 100%);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  /**background: rgba(255, 255, 255, 0.85);**/
+  backdrop-filter: blur(20px);
+  box-shadow: 0 4px 20px color-mix(in srgb, var(--theme-primary) 15%, rgba(0,0,0,0));
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
   z-index: 1000;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  /**border-bottom: 2px solid rgba(255, 192, 203, 0.6);**/
 }
 
 .header-left {
@@ -351,23 +417,24 @@ onMounted(() => {
 .sidebar-toggle {
   width: 36px;
   height: 36px;
-  border-radius: 8px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s;
-  background: rgba(64, 158, 255, 0.1);
-  border: 1px solid rgba(64, 158, 255, 0.2);
+  background: rgba(0, 0, 0, 0.05);
+  border: 2px solid rgba(0, 0, 0, 0.1);
 }
 
 .sidebar-toggle:hover {
-  background: rgba(64, 158, 255, 0.2);
+  background: rgba(0, 0, 0, 0.1);
   transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .toggle-icon {
-  color: #409eff;
+  color: var(--theme-primary);
   font-size: 18px;
 }
 
@@ -377,11 +444,10 @@ onMounted(() => {
 }
 
 .app-name {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 700;
-  color: #2c3e50;
   letter-spacing: 1px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-dark) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -389,7 +455,7 @@ onMounted(() => {
 
 .app-subtitle {
   font-size: 12px;
-  color: #7f8c8d;
+  color: var(--theme-primary);
   margin-top: 2px;
 }
 
@@ -397,28 +463,6 @@ onMounted(() => {
   flex: 1;
   display: flex;
   justify-content: center;
-}
-
-.current-time {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 16px;
-  background: rgba(64, 158, 255, 0.05);
-  border-radius: 20px;
-  border: 1px solid rgba(64, 158, 255, 0.1);
-}
-
-.time-icon {
-  color: #409eff;
-  font-size: 14px;
-}
-
-.time-text {
-  font-family: 'Monaco', 'Consolas', monospace;
-  font-size: 14px;
-  color: #409eff;
-  font-weight: 600;
 }
 
 .header-right {
@@ -432,20 +476,23 @@ onMounted(() => {
 .header-action {
   width: 36px;
   height: 36px;
-  border-radius: 8px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s;
-  color: #5a5e66;
+  color: var(--theme-primary);
   position: relative;
+  background: rgba(255, 255, 255, 0.5);
+  border: 2px solid rgba(0, 0, 0, 0.1);
 }
 
 .header-action:hover {
-  background: rgba(64, 158, 255, 0.1);
-  color: #409eff;
-  transform: translateY(-1px);
+  background: rgba(0, 0, 0, 0.1);
+  color: var(--theme-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .action-icon {
@@ -458,11 +505,11 @@ onMounted(() => {
 
 .notification-badge {
   position: absolute;
-  top: -2px;
-  right: -2px;
-  width: 16px;
-  height: 16px;
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  top: -4px;
+  right: -4px;
+  width: 18px;
+  height: 18px;
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-dark) 100%);
   color: white;
   font-size: 10px;
   font-weight: bold;
@@ -471,6 +518,7 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   border: 2px solid white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .has-notification .action-icon {
@@ -488,13 +536,18 @@ onMounted(() => {
   align-items: center;
   gap: 12px;
   cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 8px;
+  padding: 6px 12px;
+  border-radius: 12px;
   transition: all 0.3s;
+  background: rgba(255, 255, 255, 0.5);
+  border: 2px solid rgba(0, 0, 0, 0.1);
 }
 
 .user-info:hover {
-  background: rgba(64, 158, 255, 0.05);
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .user-avatar-wrapper {
@@ -502,14 +555,14 @@ onMounted(() => {
 }
 
 .user-avatar {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  border: 2px solid white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 3px solid white;
   transition: all 0.3s;
 }
 
 .user-avatar:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: scale(1.05) rotate(5deg);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
 }
 
 .avatar-initial {
@@ -527,7 +580,7 @@ onMounted(() => {
 .user-name {
   font-size: 14px;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--theme-primary);
   max-width: 120px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -535,7 +588,7 @@ onMounted(() => {
 }
 
 .user-dropdown-icon {
-  color: #909399;
+  color: #999;
   font-size: 12px;
   transition: transform 0.3s;
 }
@@ -560,20 +613,21 @@ onMounted(() => {
 }
 
 .user-dropdown-menu :deep(.el-dropdown-menu__item:hover) {
-  background: rgba(64, 158, 255, 0.1);
-  color: #409eff;
+  background: linear-gradient(135deg, var(--theme-light) 0%, var(--theme-light) 100%);
+  color: var(--theme-primary);
 }
 
 .user-dropdown-menu :deep(.el-dropdown-menu__item:hover .el-icon) {
-  color: #409eff;
+  color: var(--theme-primary);
 }
 
 .logout-item {
-  color: #f56c6c !important;
+  color: var(--theme-primary) !important;
 }
 
 .logout-item:hover {
-  background: rgba(245, 108, 108, 0.1) !important;
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-dark) 100%) !important;
+  color: white !important;
 }
 
 /* 通知样式 */
@@ -592,7 +646,7 @@ onMounted(() => {
 .notifications-header h4 {
   margin: 0;
   font-size: 16px;
-  color: #303133;
+  color: #ffffff;
 }
 
 .notifications-list {
@@ -666,17 +720,244 @@ onMounted(() => {
   justify-content: space-between;
 }
 
+/* 移动端导航切换按钮 */
+.mobile-nav-toggle {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  background: rgba(0, 0, 0, 0.05);
+  border: 2px solid rgba(0, 0, 0, 0.1);
+}
+
+.mobile-nav-toggle:hover {
+  background: rgba(0, 0, 0, 0.1);
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* 导航栏样式 */
+.nav-menu {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-items {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  min-width: 120px;
+  justify-content: center;
+}
+
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.nav-item-active {
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-dark) 100%) !important;
+  color: white !important;
+  border-color: var(--theme-primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.nav-icon {
+  font-size: 16px;
+  color: var(--theme-primary);
+  transition: color 0.3s;
+}
+
+.nav-item-active .nav-icon {
+  color: white !important;
+}
+
+.nav-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #5a4a5a;
+  white-space: nowrap;
+}
+
+.nav-item-active .nav-text {
+  color: white !important;
+}
+
+/* 下拉菜单样式 */
+.nav-item-dropdown {
+  position: relative;
+}
+
+.nav-arrow {
+  font-size: 12px;
+  color: var(--theme-primary);
+  transition: transform 0.3s;
+  margin-left: 4px;
+}
+
+.nav-item:hover .nav-arrow {
+  transform: rotate(180deg);
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 200px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 12px;
+  padding: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  border: 2px solid rgba(0, 0, 0, 0.05);
+  animation: slideDown 0.3s ease;
+  z-index: 1001;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.dropdown-item {
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: block;
+  color: #5a4a5a;
+  text-decoration: none;
+  margin-bottom: 4px;
+  text-align: center;
+}
+
+.dropdown-item:hover {
+  background: linear-gradient(135deg, var(--theme-light) 0%, var(--theme-light) 100%);
+  transform: translateX(4px);
+  color: var(--theme-primary);
+}
+
+.dropdown-item.router-link-active {
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-dark) 100%) !important;
+  color: white;
+}
+
 /* 响应式设计 */
+@media (max-width: 1024px) {
+  .nav-item {
+    padding: 6px 12px;
+    min-width: 100px;
+  }
+
+  .nav-text {
+    font-size: 13px;
+  }
+
+  .nav-icon {
+    font-size: 14px;
+  }
+}
+
 @media (max-width: 768px) {
   .header-container {
     padding: 0 16px;
   }
 
-  .app-subtitle {
-    display: none;
+  .mobile-nav-toggle {
+    display: flex !important;
   }
 
-  .current-time {
+  .nav-menu {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    right: 0;
+    height: 0;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    transition: height 0.3s ease;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 0;
+    z-index: 999;
+    max-height: calc(100vh - 60px);
+    overflow-y: auto;
+  }
+
+  .nav-menu.open {
+    height: auto;
+    min-height: 200px;
+    padding: 20px 0;
+    box-shadow: 0 8px 24px color-mix(in srgb, var(--theme-primary) 20%, rgba(0,0,0,0));
+    border-bottom: 2px solid;
+    border-bottom-color: color-mix(in srgb, var(--theme-primary) 15%, transparent);
+  }
+
+  .nav-items {
+    flex-direction: column;
+    width: 100%;
+    align-items: stretch;
+    padding: 0 16px;
+  }
+
+  .nav-item {
+    width: 100%;
+    margin-bottom: 12px;
+    justify-content: flex-start;
+    min-width: auto;
+    padding: 12px 16px;
+  }
+
+  .nav-item-dropdown {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .dropdown-menu {
+    position: static;
+    transform: none;
+    margin-top: 8px;
+    box-shadow: none;
+    border: 2px solid;
+    border-color: color-mix(in srgb, var(--theme-primary) 15%, transparent);
+    background: rgba(255, 255, 255, 0.9);
+  }
+
+  .dropdown-item {
+    text-align: left;
+  }
+
+  .app-subtitle {
     display: none;
   }
 
@@ -686,11 +967,127 @@ onMounted(() => {
 }
 
 @media (max-width: 480px) {
-  .header-action:not(.notification-action) {
+  .header-container {
+    padding: 0 12px;
+  }
+
+  .nav-item {
+    padding: 8px 10px;
+  }
+
+  .nav-text {
+    font-size: 12px;
+  }
+
+  .nav-icon {
+    font-size: 13px;
+  }
+
+  .nav-arrow {
     display: none;
   }
 
   .user-name {
+    display: none;
+  }
+}
+
+/* 主题选择器样式 */
+.theme-action {
+  position: relative;
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.05) 0%, rgba(0, 0, 0, 0.03) 100%);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.theme-action:hover {
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.05) 100%);
+}
+
+.theme-emoji {
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.theme-selector {
+  padding: 12px 0;
+}
+
+.theme-title {
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 12px;
+}
+
+.theme-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.theme-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #f5f7fa;
+  border: 2px solid transparent;
+  min-height: 80px;
+}
+
+.theme-item:hover {
+  background: #f0f2f5;
+  transform: translateY(-2px);
+}
+
+.theme-item-active {
+  background: #f5f7fa;
+  border-color: var(--theme-primary);
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.15);
+}
+
+.theme-color-dot {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s ease;
+  border: 3px solid white;
+}
+
+.theme-item:hover .theme-color-dot {
+  transform: scale(1.1);
+}
+
+.theme-item-active .theme-color-dot {
+  transform: scale(1.15);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.theme-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #606266;
+  text-align: center;
+}
+
+.theme-item-active .theme-label {
+  color: var(--theme-primary);
+  font-weight: 700;
+}
+
+/* 桌面端隐藏移动端导航按钮 */
+@media (min-width: 769px) {
+  .mobile-nav-toggle {
     display: none;
   }
 }

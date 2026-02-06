@@ -240,7 +240,7 @@
     <el-dialog
         v-model="dialogVisible"
         title="配置 WebDelivery"
-        width="580px"
+        width="1000px"
         class="add-dialog"
         :close-on-click-modal="false"
     >
@@ -257,6 +257,7 @@
                 clearable
                 filterable
                 size="large"
+                autocomplete="off"
             >
               <template #prefix>
                 <el-icon><Connection /></el-icon>
@@ -280,52 +281,55 @@
           </el-form-item>
 
           <!-- 操作系统和架构 -->
-          <div class="row-group">
-            <el-form-item label="操作系统" required class="half-width">
-              <div class="os-selector">
-                <div
-                    v-for="os in osOptions"
-                    :key="os.value"
-                    class="os-option"
-                    :class="{ 'os-selected': formData.os === os.value }"
-                    @click="selectOS(os.value)"
-                >
-                  <div class="os-icon-wrapper">
-                    <el-icon :class="['os-icon', `os-${os.value}`]">
-                      <component :is="os.icon" />
-                    </el-icon>
-                  </div>
-                  <div class="os-name">{{ os.label }}</div>
-                </div>
-              </div>
-            </el-form-item>
+          <!-- 操作系统和架构 -->
+<div class="os-arch-container">
+  <!-- 操作系统选择器 -->
+  <el-form-item label="操作系统" required class="full-width">
+    <div class="os-selector">
+      <div
+          v-for="os in osOptions"
+          :key="os.value"
+          class="os-option"
+          :class="{ 'os-selected': formData.os === os.value }"
+          @click="selectOS(os.value)"
+      >
+        <div class="os-icon-wrapper">
+          <el-icon :class="['os-icon', `os-${os.value}`]">
+            <component :is="os.icon" />
+          </el-icon>
+        </div>
+        <div class="os-name">{{ os.label }}</div>
+      </div>
+    </div>
+  </el-form-item>
 
-            <el-form-item label="系统架构" required class="half-width">
-              <el-select
-                  v-model="formData.arch"
-                  placeholder="选择架构"
-                  :disabled="!formData.os"
-                  size="large"
-                  class="arch-select"
-              >
-                <template #prefix>
-                  <el-icon><Cpu /></el-icon>
-                </template>
-                <el-option
-                    v-for="arch in archOptions"
-                    :key="arch"
-                    :label="arch.toUpperCase()"
-                    :value="arch"
-                >
-                  <div class="arch-option-item">
-                    <el-icon><Cpu /></el-icon>
-                    <span class="arch-label">{{ arch.toUpperCase() }}</span>
-                    <span class="arch-desc">{{ getArchDescription(arch) }}</span>
-                  </div>
-                </el-option>
-              </el-select>
-            </el-form-item>
-          </div>
+  <!-- 架构选择器 -->
+  <el-form-item label="系统架构" required class="full-width">
+    <el-select
+        v-model="formData.arch"
+        placeholder="选择架构"
+        :disabled="!formData.os"
+        size="large"
+        class="arch-select"
+    >
+      <template #prefix>
+        <el-icon><Cpu /></el-icon>
+      </template>
+      <el-option
+          v-for="arch in archOptions"
+          :key="arch"
+          :label="arch.toUpperCase()"
+          :value="arch"
+      >
+        <div class="arch-option-item">
+          <el-icon><Cpu /></el-icon>
+          <span class="arch-label">{{ arch.toUpperCase() }}</span>
+          <span class="arch-desc">{{ getArchDescription(arch) }}</span>
+        </div>
+      </el-option>
+    </el-select>
+  </el-form-item>
+</div>
 
           <!-- 端口和文件名 -->
           <div class="row-group">
@@ -370,6 +374,7 @@
                   size="large"
                   class="password-input"
                   :maxlength="32"
+                  autocomplete="new-password"
               >
                 <template #prefix>
                   <el-icon><Lock /></el-icon>
@@ -469,7 +474,7 @@
           <el-button
               type="primary"
               @click="handleStageShellcode"
-              :loading="generatingShellcode"
+              :loading="generatinBackendTemplatecode"
               :disabled="!selectedFormat.format"
           >
             生成并下载
@@ -514,7 +519,7 @@ const dialogVisible = ref(false)
 const dialogVisible2 = ref(false)
 const loadingListeners = ref(false)
 const submitting = ref(false)
-const generatingShellcode = ref(false)
+const generatinBackendTemplatecode = ref(false)
 
 // 监听器选项
 const listenerOptions = ref([])
@@ -755,7 +760,7 @@ const handleStageShellcode = async () => {
     return
   }
 
-  generatingShellcode.value = true
+  generatinBackendTemplatecode.value = true
   try {
     const res = await ClientAPI.StageShellCodeGen({
       listener: selectedListener.value,
@@ -791,7 +796,7 @@ const handleStageShellcode = async () => {
     console.error('生成Shellcode失败:', error)
     ElMessage.error('生成失败')
   } finally {
-    generatingShellcode.value = false
+    generatinBackendTemplatecode.value = false
   }
 }
 
@@ -1176,7 +1181,11 @@ onMounted(async () => {
   justify-content: flex-end;
 }
 
-/* 对话框样式 */
+.add-dialog :deep(.el-dialog) {
+  width: 1000px !important;
+  max-width: 95vw !important;
+}
+
 .add-dialog,
 .shellcode-dialog {
   border-radius: 16px;
@@ -1205,16 +1214,178 @@ onMounted(async () => {
   display: block;
 }
 
-/* 行组样式 */
-.row-group {
-  display: flex;
-  gap: 24px;
-  align-items: flex-start;
+/* 确保表单项不被截断 */
+.config-form :deep(.el-form-item__content) {
+  overflow: visible;
 }
 
-.half-width {
+/* 操作系统和架构容器 */
+.os-arch-container {
+  width: 100%;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+/* 使左右两块在大屏并排，移动端回落为竖排 */
+.os-arch-container .full-width {
+  flex: 1 1 320px;
+  min-width: 240px;
+  margin-bottom: 24px;
+}
+
+/* 操作系统区域更灵活，优先占用剩余空间 */
+.os-selector {
+  flex: 1 1 480px;
+  min-width: 240px;
+}
+
+/* 架构选择固定宽度，避免覆盖左侧卡片 */
+.arch-select {
+  flex: 0 0 280px;
+  min-width: 200px;
+  max-width: 360px;
+}
+
+/* 确保操作系统卡片处于正常文档流且可见 */
+.os-option {
+  position: relative;
+  z-index: 1;
+}
+
+/* 下拉面板置顶，避免遮挡左侧卡片 */
+.arch-select :deep(.el-select-dropdown) {
+  z-index: 2050;
+}
+
+/* 全宽度表单项 */
+.full-width {
+  width: 100%;
+  margin-bottom: 24px; /* 增加下边距 */
+}
+
+.full-width:last-child {
+  margin-bottom: 0; /* 最后一个不需要下边距 */
+}
+
+/* 操作系统选择器调整为上下排列 */
+.os-selector {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: nowrap;
+}
+
+.os-option {
   flex: 1;
-  min-width: 0;
+  padding: 16px 12px;
+  border: 2px solid #e9ecef;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s;
+  background: #f8f9fa;
+  text-align: center;
+  min-height: 80px;
+}
+
+.os-option:hover {
+  border-color: #409eff;
+  background: rgba(64, 158, 255, 0.05);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.os-selected {
+  border-color: #409eff !important;
+  background: rgba(64, 158, 255, 0.1) !important;
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.2);
+}
+
+.os-icon-wrapper {
+  width: 36px;
+  height: 36px;
+  margin: 0 auto 8px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.os-icon {
+  font-size: 20px;
+}
+
+.os-windows {
+  color: #00a4ef;
+}
+
+.os-linux {
+  color: #333;
+}
+
+.os-darwin {
+  color: #999;
+}
+
+.os-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+/* 架构选择器 */
+.arch-select {
+  width: 100%;
+}
+
+.arch-select :deep(.el-input__wrapper) {
+  border-radius: 10px;
+  padding-left: 12px;
+  height: 48px;
+  width: 100%;
+}
+
+.arch-option-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+}
+
+.arch-option-item .el-icon {
+  color: #409eff;
+  font-size: 16px;
+}
+
+.arch-label {
+  font-size: 14px;
+  font-weight: 500;
+  min-width: 60px;
+}
+
+.arch-desc {
+  font-size: 11px;
+  color: #909399;
+  flex: 1;
+  text-align: right;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .os-selector {
+    flex-direction: column;
+  }
+
+  .os-option {
+    min-height: 70px;
+    padding: 12px;
+  }
+}
+
+/* 如果需要确保两个部分之间有足够间距 */
+.os-arch-container .el-form-item {
+  width: 100%;
 }
 
 /* 操作系统选择器 */
@@ -1280,6 +1451,10 @@ onMounted(async () => {
 }
 
 /* 架构选择器 */
+.arch-select {
+  width: 100%;
+}
+
 .arch-select :deep(.el-input__wrapper) {
   border-radius: 10px;
   padding-left: 12px;

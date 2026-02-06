@@ -864,7 +864,7 @@ onMounted(async () => {
 }
 
 .table-title i {
-  color: #409eff;
+  color: var(--theme-primary);
 }
 
 .count-tag {

@@ -384,15 +384,15 @@ onMounted(async() => {
 
 const Clients_tableColumn :Table.Column[]= [
   // {prop: 'uid', label: 'uid', showOverflowTooltip: true},
-  {prop: 'FirstStart', label: 'FirstStart', showOverflowTooltip: true, Color: 'Color',width:"130"},
-  {prop: 'ExternalIP', label: '外网IP', showOverflowTooltip: true, Color: 'Color',width:"130"},
-  // {prop: 'InternalIP', label: '内网IP', showOverflowTooltip: true, Color: 'Color'},
+  {prop: 'FirstStart', label: 'FirstStart', showOverflowTooltip: true, Color: 'Color',width:"100"},
+  {prop: 'ExternalIP', label: '外网IP', showOverflowTooltip: true, Color: 'Color',width:"100"},
+  // {prop: 'InternalIP', label: '内网IP', showOverflowTooltip: true, Color: 'Color',width:"100"},
   {prop: 'Username', label: 'User', showOverflowTooltip: true,width:"170", Color: 'Color'},
   {prop: 'Computer', label: 'Computer', showOverflowTooltip: true,width:"170", Color: 'Color'},
-  {prop: 'Process', label: 'Process', showOverflowTooltip: true, Color: 'Color'},
-  {prop: 'Pid', label: 'Pid', showOverflowTooltip: true, Color: 'Color'},
-  {prop: 'Address', label: 'Address', showOverflowTooltip: true, Color: 'Color',width:"200"},
-  {prop: 'Arch', label: 'Arch', showOverflowTooltip: true,width:"60", Color: 'Color'},
+  {prop: 'Process', label: 'Process', showOverflowTooltip: true, Color: 'Color',width:"200"},
+  //{prop: 'Pid', label: 'Pid', showOverflowTooltip: true, Color: 'Color'},
+  {prop: 'Address', label: 'Address', showOverflowTooltip: true, Color: 'Color',width:"150"},
+  //{prop: 'Arch', label: 'Arch', showOverflowTooltip: true,width:"60", Color: 'Color'},
   {prop: 'Note', label: 'Note',  showOverflowTooltip: true, Color: 'Color',width:"120"},
   {prop: 'Sleep', label: 'Sleep',  showOverflowTooltip: true,width:"65", Color: 'Color'},
   {
@@ -403,7 +403,7 @@ const Clients_tableColumn :Table.Column[]= [
     Color: 'Color'
   },
   {
-    // width: '200',
+    width: '180',
     label: '操作',
     buttons: [],
     slot: 'action', Color: 'Color'
@@ -557,7 +557,7 @@ const handlePaginationChange = async (
   margin: 0;
   font-size: 18px;
   font-weight: 600;
-  color: #303133;
+  color: var(--theme-primary);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -568,7 +568,7 @@ const handlePaginationChange = async (
   display: block;
   width: 4px;
   height: 18px;
-  background: linear-gradient(180deg, #409eff 0%, #79bbff 100%);
+  background: linear-gradient(180deg, var(--theme-primary) 0%, var(--theme-dark) 100%);
   border-radius: 2px;
 }
 

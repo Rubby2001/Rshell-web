@@ -58,4 +58,25 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 }
 app.use(router)
 
+// 应用背景图片
+const applyBackgroundImage = () => {
+    const bg = localStorage.getItem('backgroundImage');
+    if (bg) {
+        // 使用 nextTick 确保 DOM 完全渲染后再应用背景
+        setTimeout(() => {
+            document.body.classList.add('has-background');
+            // 使用 background 属性直接设置，覆盖所有默认背景
+            // document.body.style.background = `url(${bg}) center center / cover no-repeat fixed`;
+            document.body.style.setProperty(
+                'background', 
+                `url(${bg}) center center / cover no-repeat fixed`, 
+                'important'
+            );
+        }, 100);
+    }
+};
+
 app.mount("#app")
+
+// 在挂载后应用背景图片
+applyBackgroundImage();

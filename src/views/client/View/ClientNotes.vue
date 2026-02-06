@@ -1060,6 +1060,82 @@ onUnmounted(() => {
   }
 }
 
+/* 下拉菜单文字颜色修复 */
+.note-container :deep(.el-dropdown-menu) {
+  --el-text-color-primary: #333333 !important;
+  --el-text-color-regular: #333333 !important;
+}
+
+.note-container :deep(.el-dropdown-menu__item) {
+  color: #333333 !important;
+}
+
+.note-container :deep(.el-dropdown-menu__item:hover) {
+  color: #409eff !important;
+}
+
+/* 输入框文字颜色修复 */
+.note-container :deep(.el-input__inner),
+.note-container :deep(.el-textarea__inner),
+.note-container :deep(.el-input .el-input__wrapper),
+.note-container :deep(.el-textarea .el-textarea__inner) {
+  --el-text-color-primary: #333333 !important;
+  color: #333333 !important;
+}
+
+.note-container :deep(.el-input__placeholder),
+.note-container :deep(.el-textarea__placeholder) {
+  color: #c0c4cc !important;
+}
+
+/* MessageBox 文字颜色修复 */
+.note-container :deep(.el-message-box__content) {
+  color: #333333 !important;
+}
+
+.note-container :deep(.el-message-box__btns) {
+  color: #333333 !important;
+}
+
+/* 对话框样式修复 */
+.note-container :deep(.el-dialog) {
+  --el-text-color-primary: #333333 !important;
+}
+
+.note-container :deep(.el-dialog__title) {
+  color: #303133 !important;
+}
+
+.note-container :deep(.el-dialog__body) {
+  color: #333333 !important;
+}
+
+.note-container :deep(.el-dialog .el-form-item__label) {
+  color: #333333 !important;
+}
+
+.note-container :deep(.el-dialog .el-input__inner) {
+  color: #333333 !important;
+  background: white !important;
+}
+
+.note-container :deep(.el-dialog .el-textarea__inner) {
+  color: #333333 !important;
+  background: white !important;
+}
+
+.note-container :deep(.el-dialog .el-form-item) {
+  color: #333333 !important;
+}
+
+.note-container :deep(.el-dialog .el-timeline-item__timestamp) {
+  color: #606266 !important;
+}
+
+.note-container :deep(.el-dialog .el-card__body) {
+  color: #333333 !important;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .toolbar-content {
@@ -1083,5 +1159,92 @@ onUnmounted(() => {
   .status-right {
     justify-content: center;
   }
+}
+</style>
+
+<!-- 全局样式修复 - 不受 scoped 限制 -->
+<style>
+/* 下拉菜单全局修复 */
+.el-dropdown-menu {
+  --el-text-color-primary: #333333 !important;
+  --el-text-color-regular: #333333 !important;
+  color: #333333 !important;
+  background-color: white !important;
+}
+
+.el-dropdown-menu__item {
+  color: #333333 !important;
+}
+
+.el-dropdown-menu__item:hover {
+  color: #409eff !important;
+  background-color: #f5f7fa !important;
+}
+
+/* 对话框全局修复 */
+.el-dialog {
+  --el-text-color-primary: #333333 !important;
+  --el-text-color-regular: #333333 !important;
+}
+
+.el-dialog__title {
+  color: #303133 !important;
+}
+
+.el-dialog__body {
+  color: #333333 !important;
+}
+
+.el-dialog__header {
+  background-color: white !important;
+}
+
+/* 表单相关全局修复 */
+.el-form-item__label {
+  color: #333333 !important;
+}
+
+.el-input__inner,
+.el-textarea__inner {
+  color: #333333 !important;
+  background-color: white !important;
+}
+
+.el-input__placeholder {
+  color: #c0c4cc !important;
+}
+
+/* MessageBox 全局修复 */
+.el-message-box {
+  --el-text-color-primary: #333333 !important;
+}
+
+.el-message-box__content {
+  color: #333333 !important;
+}
+
+.el-message-box__header {
+  background-color: white !important;
+}
+
+/* Popper 类弹出层全局修复 */
+.el-popper {
+  --el-text-color-primary: #333333 !important;
+  --el-text-color-regular: #333333 !important;
+  color: #333333 !important;
+  background-color: white !important;
+}
+
+/* 时间线和卡片的全局修复 */
+.el-timeline-item__timestamp {
+  color: #606266 !important;
+}
+
+.el-card__body {
+  color: #333333 !important;
+}
+
+.el-card__header {
+  background-color: #f5f7fa !important;
 }
 </style>

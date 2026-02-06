@@ -295,6 +295,7 @@
               v-model="formData.username"
               placeholder="可选，留空则不启用认证"
               clearable
+              autocomplete="off"
           >
             <template #prepend>
               <span class="input-prepend">用户</span>
@@ -309,6 +310,7 @@
               type="password"
               show-password
               clearable
+              autocomplete="new-password"
           >
             <template #prepend>
               <span class="input-prepend">密码</span>
@@ -772,7 +774,7 @@ onMounted(async () => {
 
   i {
     margin-right: 8px;
-    color: #409eff;
+    color: var(--theme-primary);
   }
 }
 

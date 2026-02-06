@@ -167,7 +167,7 @@ const sidebarWidth = computed(() => sidebar.collapse ? '64px' : '250px')
           <div class="logo-icon">
             <el-icon><Connection /></el-icon>
           </div>
-          <h3 class="logo-title">Rshell</h3>
+          <h3 class="logo-title">Gshell</h3>
           <span class="logo-subtitle">管理控制台</span>
         </div>
 
@@ -508,7 +508,7 @@ const sidebarWidth = computed(() => sidebar.collapse ? '64px' : '250px')
 }
 
 .menu-badge-hot {
-  background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-dark) 100%);
   color: white;
 }
 
@@ -686,7 +686,7 @@ const sidebarWidth = computed(() => sidebar.collapse ? '64px' : '250px')
 }
 
 .submenu-badge-hot {
-  background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-dark) 100%);
   color: white;
 }
 

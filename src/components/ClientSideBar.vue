@@ -69,7 +69,7 @@ const menuItems = [
     index: '/client/downloads',
     title: "下载管理",
     description: "文件传输和下载",
-    color: "#9254de"
+    color: "#ffffff"
   },
   {
     icon: Document,
@@ -485,7 +485,7 @@ const getClientColor = () => {
 }
 
 .address-icon {
-  color: #9254de;
+  color: #ffffff;
   font-size: 12px;
 }
 

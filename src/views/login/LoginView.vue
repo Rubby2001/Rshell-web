@@ -61,7 +61,7 @@ const submitForm = (formEl: FormInstance | undefined) => {
             userinfo.setRoles('普通用户')
           }
           userinfo.setUserName(res.data.data.username)
-          router.push('/Clients')
+          router.push('/home')
         } else {
           ElMessage.error(res.data.username)
         }
@@ -141,9 +141,6 @@ tags.clearTags()
       </el-form>
 
     </div>
-    <div class="copyright">
-      <span>https://github.com/Rubby2001/Rshell---A-Cross-Platform-C2</span>
-    </div>
 <!--    <el-dialog v-model="dialogVisible" title="请选择服务端地址" width="30%">-->
 <!--      <div style="margin-bottom: 15px;">-->
 <!--        <el-select v-model="selectedValue" placeholder="请选择服务端地址" style="width: 100%;">-->
@@ -173,8 +170,6 @@ tags.clearTags()
   position: relative;
   width: 100%;
   height: 100%;
-  background-size: 100%;
-  background-image: url('@/assets/login.png');
 }
 
 .ms-title {

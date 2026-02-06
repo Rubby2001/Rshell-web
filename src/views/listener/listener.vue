@@ -317,7 +317,7 @@
 
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="handleCancel" :disabled="loading">
+          <el-button @click="handleCancel" :disabled="loading" style="background: rgb(255, 107, 157) !important;">
             取消
           </el-button>
           <el-button
@@ -571,10 +571,10 @@ const handleViewDetails = (row: any) => {
   ElMessageBox.alert(
       `<div class="listener-details">
       <h3>监听器详情</h3>
-      <p><strong>协议类型：</strong>${row.Type}</p>
-      <p><strong>监听地址：</strong>${row.ListenAddress}</p>
-      <p><strong>连接地址：</strong>${row.ConnectAddress}</p>
-      <p><strong>当前状态：</strong>${row.Status === 1 ? '运行中' : '已停止'}</p>
+      <p style="color: var(--theme-primary);"><strong>协议类型：</strong>${row.Type}</p>
+      <p style="color: var(--theme-primary);"><strong>监听地址：</strong>${row.ListenAddress}</p>
+      <p style="color: var(--theme-primary);"><strong>连接地址：</strong>${row.ConnectAddress}</p>
+      <p style="color: var(--theme-primary);"><strong>当前状态：</strong>${row.Status === 1 ? '运行中' : '已停止'}</p>
     </div>`,
       '监听器详情',
       {
@@ -611,7 +611,7 @@ onMounted(async () => {
 <style scoped>
 .listener-management {
   padding: 24px;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e4e7ed 100%);
+  background: var(--theme-gradient);
   min-height: calc(100vh - 60px);
 }
 
@@ -630,8 +630,7 @@ onMounted(async () => {
   margin: 0;
   font-size: 28px;
   font-weight: 700;
-  color: #2c3e50;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-dark) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -649,13 +648,13 @@ onMounted(async () => {
   padding: 0 24px;
   border-radius: 10px;
   font-weight: 600;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   transition: all 0.3s;
 }
 
 .add-listener-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
 .add-listener-btn .el-icon {
@@ -702,8 +701,8 @@ onMounted(async () => {
 }
 
 .total-icon {
-  background: rgba(64, 158, 255, 0.1);
-  color: #409eff;
+  background: rgba(0, 0, 0, 0.03);
+  color: var(--theme-primary);
 }
 
 .active-icon {
@@ -756,7 +755,7 @@ onMounted(async () => {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  color: #303133;
+  color: var(--theme-primary);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -767,7 +766,7 @@ onMounted(async () => {
   display: block;
   width: 4px;
   height: 16px;
-  background: linear-gradient(180deg, #409eff 0%, #79bbff 100%);
+  background: linear-gradient(180deg, var(--theme-primary) 0%, var(--theme-dark) 100%);
   border-radius: 2px;
 }
 
@@ -802,6 +801,7 @@ onMounted(async () => {
   font-size: 12px;
   padding: 4px 12px;
   letter-spacing: 0.5px;
+  color: rgb(44, 62, 80);
 }
 
 /* 地址单元格样式 */
@@ -954,16 +954,16 @@ onMounted(async () => {
 }
 
 .protocol-card:hover {
-  border-color: #409eff;
-  background: rgba(64, 158, 255, 0.05);
+  border-color: var(--theme-primary);
+  background: rgba(0, 0, 0, 0.02);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .protocol-selected {
-  border-color: #409eff !important;
-  background: rgba(64, 158, 255, 0.1) !important;
-  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.2);
+  border-color: var(--theme-primary) !important;
+  background: rgba(0, 0, 0, 0.03) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .protocol-icon {
@@ -976,7 +976,7 @@ onMounted(async () => {
   font-size: 20px;
 }
 
-.protocol-icon .protocol-ws { color: #409eff; }
+.protocol-icon .protocol-ws { color: var(--theme-primary); }
 .protocol-icon .protocol-tcp { color: #909399; }
 .protocol-icon .protocol-kcp { color: #e6a23c; }
 .protocol-icon .protocol-http { color: #67c23a; }
