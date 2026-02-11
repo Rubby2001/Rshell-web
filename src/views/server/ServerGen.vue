@@ -46,40 +46,106 @@
             </div>
           </div>
         </template>
-
+        <!-- 正向客户端复选框 -->
+        <div class="forward-toggle-wrapper">
+          <div
+              class="forward-toggle"
+              :class="{ 'is-active': formData.isForwardClient }"
+              @click="formData.isForwardClient = !formData.isForwardClient; handleForwardClientChange(formData.isForwardClient)"
+          >
+            <div class="toggle-track">
+              <div class="toggle-indicator"></div>
+            </div>
+            <div class="toggle-label">
+      <span class="toggle-text" :class="{ 'active-text': formData.isForwardClient }">
+        {{ formData.isForwardClient ? '正向模式已开启' : '正向模式已关闭' }}
+      </span>
+              <el-tooltip content="正向客户端将主动监听指定端口，等待服务端连接" placement="right">
+                <el-icon class="toggle-help-icon"><InfoFilled /></el-icon>
+              </el-tooltip>
+            </div>
+          </div>
+        </div>
         <div class="config-form">
           <el-form :model="formData" label-position="top" class="generator-form">
             <!-- Listener 选择 -->
-            <el-form-item label="监听器" required>
-              <el-select
-                  v-model="formData.listener"
-                  placeholder="选择监听器"
-                  class="form-select"
-                  @visible-change="handleDropdown"
-                  :loading="loadingListeners"
-                  clearable
-                  filterable
-                  autocomplete="off"
-              >
-                <template #prefix>
-                  <el-icon><Connection /></el-icon>
-                </template>
-                <el-option
-                    v-for="item in listenerOptions"
-                    :key="item"
-                    :label="item"
-                    :value="item"
-                >
-                  <div class="listener-option">
-                    <el-icon class="option-icon"><Connection /></el-icon>
-                    <span class="option-label">{{ item }}</span>
+            <!-- 监听器选择 / 正向客户端配置 -->
+            <el-form-item :label="formData.isForwardClient ? '正向客户端配置' : '监听器'" required>
+              <!-- 正向客户端模式 -->
+              <template v-if="formData.isForwardClient">
+                <div class="forward-config">
+                  <div class="forward-row">
+                    <div class="forward-type">
+                      <el-select
+                          v-model="formData.forwardType"
+                          placeholder="连接方式"
+                          class="forward-select"
+                          size="large"
+                      >
+                        <el-option label="WebSocket" value="websocket">
+                          <div class="forward-option">
+                            <el-icon><Connection /></el-icon>
+                            <span>WebSocket</span>
+                          </div>
+                        </el-option>
+                        <el-option label="TCP" value="tcp">
+                          <div class="forward-option">
+                            <el-icon><Monitor /></el-icon>
+                            <span>TCP</span>
+                          </div>
+                        </el-option>
+                      </el-select>
+                    </div>
+                    <div class="forward-address">
+                      <el-input
+                          v-model="formData.forwardAddress"
+                          placeholder="0.0.0.0:8080"
+                          size="large"
+                          clearable
+                      >
+                        <template #prefix>
+                          <el-icon><Promotion /></el-icon>
+                        </template>
+                      </el-input>
+                    </div>
                   </div>
-                </el-option>
-                <template #empty>
-                  <div class="empty-option">暂无可用监听器</div>
-                </template>
-              </el-select>
-              <div class="form-hint">选择客户端连接的监听器地址</div>
+                  <div class="form-hint">正向客户端监听的地址格式: IP:端口</div>
+                </div>
+              </template>
+
+              <!-- 普通监听器模式 -->
+              <template v-else>
+                <el-select
+                    v-model="formData.listener"
+                    placeholder="选择监听器"
+                    class="form-select"
+                    @visible-change="handleDropdown"
+                    :loading="loadingListeners"
+                    clearable
+                    autocomplete="off"
+                >
+                  <template #prefix>
+                    <el-icon><Connection /></el-icon>
+                  </template>
+                  <el-option
+                      v-for="item in listenerOptions"
+                      :key="item"
+                      :label="item"
+                      :value="item"
+                  >
+                    <div class="listener-option">
+                      <el-icon class="option-icon"><Connection /></el-icon>
+                      <span class="option-label">{{ item }}</span>
+                    </div>
+                  </el-option>
+                  <template #empty>
+                    <div class="empty-option">暂无可用监听器</div>
+                  </template>
+                </el-select>
+                <div class="form-hint">选择客户端连接的监听器地址</div>
+              </template>
+
+
             </el-form-item>
 
             <!-- 操作系统选择 -->
@@ -787,7 +853,19 @@ const archDescriptions: Record<string, string> = {
   'mips64': 'MIPS 64位 (大端)',
   'mips64le': 'MIPS 64位 (小端)'
 };
+// 正向客户端切换处理
+const handleForwardClientChange = (value: boolean) => {
+  if (value) {
+    // 切换到正向模式，清空监听器选择
+    formData.listener = '';
+  }
+};
 
+// 生成正向客户端监听器字符串
+const getForwardListenerString = () => {
+  if (!formData.isForwardClient) return formData.listener;
+  return `forward-${formData.forwardType}://${formData.forwardAddress}`;
+};
 // 格式选项
 const formatOptions = [
   { value: 'hex', label: '十六进制', icon: Warning, description: 'HEX格式Shellcode' },
@@ -805,7 +883,10 @@ const formData = reactive({
   listener: '',
   os: '',
   arch: '',
-  pass: ''
+  pass: '',
+  isForwardClient: false,      // 新增：是否正向客户端
+  forwardType: 'websocket',    // 新增：正向连接类型
+  forwardAddress: ''           // 新增：正向监听地址
 });
 
 const archOptions = ref<string[]>([]);
@@ -840,6 +921,9 @@ const inactiveDeliveries = computed(() => {
 });
 
 const isFormValid = computed(() => {
+  if (formData.isForwardClient) {
+    return formData.forwardType && formData.forwardAddress && formData.os && formData.arch;
+  }
   return formData.listener && formData.os && formData.arch;
 });
 
@@ -989,12 +1073,21 @@ const handleGenerate = async () => {
 
   generating.value = true;
   try {
-    const res = await ClientAPI.GenServer({
+    // 构造请求参数
+    const requestData: any = {
       osType: formData.os,
       archType: formData.arch,
-      listener: formData.listener,
       pass: formData.pass
-    });
+    };
+
+    // 设置监听器字段
+    if (formData.isForwardClient) {
+      requestData.listener = getForwardListenerString();
+    } else {
+      requestData.listener = formData.listener;
+    }
+
+    const res = await ClientAPI.GenServer(requestData);
 
     if (res.status === 200) {
       const contentDisposition = res.headers['content-disposition'] || '';
@@ -2323,5 +2416,157 @@ onMounted(() => {
     flex-wrap: wrap;
     justify-content: center;
   }
+}
+/* 正向客户端配置样式 */
+.forward-checkbox-wrapper {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.forward-checkbox-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.forward-help-icon {
+  color: #909399;
+  font-size: 16px;
+  cursor: help;
+}
+
+.forward-help-icon:hover {
+  color: var(--theme-primary);
+}
+
+.forward-config {
+  width: 100%;
+}
+
+.forward-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.forward-type {
+  width: 160px;
+  flex-shrink: 0;
+}
+
+.forward-address {
+  flex: 1;
+}
+
+.forward-select :deep(.el-input__wrapper) {
+  border-radius: 10px;
+  padding-left: 12px;
+  height: 48px;
+}
+
+.forward-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+}
+
+.forward-option .el-icon {
+  color: var(--theme-primary);
+  font-size: 16px;
+}
+
+.forward-option span {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .forward-row {
+    flex-direction: column;
+  }
+
+  .forward-type {
+    width: 100%;
+  }
+
+  .forward-address {
+    width: 100%;
+  }
+}
+/* 开关切换样式 */
+.forward-toggle-wrapper {
+  margin-top: 16px;
+  padding: 8px 0;
+}
+
+.forward-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-track {
+  position: relative;
+  width: 52px;
+  height: 28px;
+  background: #e9ecef;
+  border-radius: 30px;
+  transition: all 0.3s ease;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.is-active .toggle-track {
+  background: linear-gradient(90deg, var(--theme-primary), var(--theme-dark));
+}
+
+.toggle-indicator {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 24px;
+  height: 24px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.is-active .toggle-indicator {
+  transform: translateX(24px);
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toggle-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: #6c757d;
+  transition: color 0.3s;
+}
+
+.active-text {
+  color: var(--theme-primary);
+  font-weight: 600;
+}
+
+.toggle-help-icon {
+  color: #909399;
+  font-size: 16px;
+  cursor: help;
+  transition: color 0.3s;
+}
+
+.toggle-help-icon:hover {
+  color: var(--theme-primary);
 }
 </style>

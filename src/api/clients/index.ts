@@ -320,6 +320,17 @@ export default{
             responseType: 'blob',
         })
 
+    },
+    createForwardConnection(data: {
+        type: string
+        address: string
+        proxy?: string
+    }){
+        return request({
+            url:"/forward-connection",
+            method:"POST",
+            data:data,
+        })
     }
 
 }

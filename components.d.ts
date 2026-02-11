@@ -62,6 +62,7 @@ declare module 'vue' {
     TablesView: typeof import('./src/components/Common/Tables/TablesView.vue')['default']
     TagsView: typeof import('./src/components/TagsView.vue')['default']
     TestTable: typeof import('./src/components/Common/Test/TestTable.vue')['default']
+    TopNavBar: typeof import('./src/components/TopNavBar.vue')['default']
   }
   export interface ComponentCustomProperties {
     vLoading: typeof import('element-plus/es')['ElLoadingDirective']

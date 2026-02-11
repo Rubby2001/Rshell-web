@@ -44,6 +44,54 @@
       </div>
     </el-dialog>
 
+    <el-dialog
+        v-model="forwardDialogVisible"
+        title="正向连接"
+        width="500px"
+        :close-on-click-modal="false"
+        class="forward-dialog"
+    >
+      <el-form :model="forwardForm" label-width="100px">
+        <el-form-item label="连接方式">
+          <el-radio-group v-model="forwardForm.connectionType">
+            <el-radio label="websocket">WebSocket</el-radio>
+            <el-radio label="tcp">TCP</el-radio>
+          </el-radio-group>
+        </el-form-item>
+
+        <el-form-item label="连接地址">
+          <el-input
+              v-model="forwardForm.address"
+              placeholder="192.168.1.2:8000"
+              clearable
+          />
+          <div class="form-tip">格式: IP:端口</div>
+        </el-form-item>
+
+        <el-form-item label="Socks5代理地址">
+          <el-input
+              v-model="forwardForm.proxyAddress"
+              placeholder="127.0.0.1:1080"
+              clearable
+          />
+          <div class="form-tip">可选填，支持 socks5/http 代理</div>
+        </el-form-item>
+      </el-form>
+
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="forwardDialogVisible = false">取消</el-button>
+          <el-button
+              type="primary"
+              @click="handleConnect"
+              :loading="connecting"
+          >
+            连接
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
+
     <!-- 颜色选择对话框 -->
     <el-dialog
         v-model="colorDialogVisible"
@@ -93,6 +141,16 @@
           <div class="table-header">
             <h3 class="table-title">客户端管理</h3>
             <div class="table-header-actions">
+              <!-- 添加正向连接按钮 -->
+              <el-button
+                  type="primary"
+                  @click="handleAddForwardConnection"
+                  size="small"
+                  class="forward-connect-btn"
+              >
+                <el-icon><Connection /></el-icon>
+                正向连接
+              </el-button>
               <el-tag type="info" class="refresh-tag">
                 自动刷新: 2秒
               </el-tag>
@@ -235,6 +293,7 @@
 <script setup lang="ts">
 import {
   Document,
+  Connection,
   Brush,
   Timer,
   SwitchButton,
@@ -385,9 +444,9 @@ onMounted(async() => {
 const Clients_tableColumn :Table.Column[]= [
   // {prop: 'uid', label: 'uid', showOverflowTooltip: true},
   {prop: 'FirstStart', label: 'FirstStart', showOverflowTooltip: true, Color: 'Color',width:"100"},
-  {prop: 'ExternalIP', label: '外网IP', showOverflowTooltip: true, Color: 'Color',width:"100"},
+  {prop: 'ExternalIP', label: '外网IP', showOverflowTooltip: true, Color: 'Color',width:"150"},
   // {prop: 'InternalIP', label: '内网IP', showOverflowTooltip: true, Color: 'Color',width:"100"},
-  {prop: 'Username', label: 'User', showOverflowTooltip: true,width:"170", Color: 'Color'},
+  {prop: 'Username', label: 'User', showOverflowTooltip: true,width:"100", Color: 'Color'},
   {prop: 'Computer', label: 'Computer', showOverflowTooltip: true,width:"170", Color: 'Color'},
   {prop: 'Process', label: 'Process', showOverflowTooltip: true, Color: 'Color',width:"200"},
   //{prop: 'Pid', label: 'Pid', showOverflowTooltip: true, Color: 'Color'},
@@ -507,6 +566,73 @@ const ReloadClick = async () => {
   })
   reload()
 }
+// 在现有变量后面添加新变量
+const forwardDialogVisible = ref(false)
+const connecting = ref(false)
+
+// 正向连接表单数据
+interface ForwardForm {
+  connectionType: string
+  address: string
+  proxyAddress: string
+}
+
+const forwardForm = reactive<ForwardForm>({
+  connectionType: 'websocket',
+  address: '',
+  proxyAddress: ''
+})
+
+// 处理添加正向连接按钮点击
+const handleAddForwardConnection = () => {
+  forwardForm.connectionType = 'websocket'
+  forwardForm.address = ''
+  forwardForm.proxyAddress = ''
+  forwardDialogVisible.value = true
+}
+
+// 处理连接请求
+const handleConnect = async () => {
+  if (!forwardForm.address.trim()) {
+    ElMessage.warning('请输入连接地址')
+    return
+  }
+
+  // 验证地址格式
+  const addressRegex = /^[\w.-]+:\d+$/
+  if (!addressRegex.test(forwardForm.address)) {
+    ElMessage.warning('连接地址格式不正确，应为 IP:端口')
+    return
+  }
+
+
+  try {
+    connecting.value = true
+
+    // 这里调用后端的API，需要根据你的实际API调整
+    const res = await ClientAPI.createForwardConnection({
+      type: forwardForm.connectionType,
+      address: forwardForm.address,
+      proxy: forwardForm.proxyAddress || undefined
+    })
+
+    if (res.data.status === 200) {
+      ElMessage.success('连接请求发送成功')
+      forwardDialogVisible.value = false
+
+      // 可以在这里刷新客户端列表或执行其他操作
+      getList()
+    } else {
+      ElMessage.error(res.data.message || '连接失败')
+    }
+  } catch (error) {
+    console.error('连接失败:', error)
+    ElMessage.error('连接请求发送失败')
+  } finally {
+    connecting.value = false
+  }
+}
+
 const handlePaginationChange = async (
     page: number,
     pageSize: number,
@@ -522,6 +648,16 @@ const handlePaginationChange = async (
 }
 </script>
 
+<style>
+/* 非 scoped 样式，会影响全局 */
+.el-radio__label {
+  color: #000 !important;
+}
+
+.el-dialog .el-radio__label {
+  color: #000 !important;
+}
+</style>
 
 <style scoped>
 .client-management {
@@ -887,6 +1023,67 @@ const handlePaginationChange = async (
 
   .color-options {
     grid-template-columns: 1fr;
+  }
+}
+/* 在现有样式后添加 */
+
+.forward-connect-btn {
+  margin-right: 12px;
+  background: linear-gradient(135deg, #409eff 0%, #337ecc 100%);
+  border: none;
+}
+
+.forward-connect-btn:hover {
+  background: linear-gradient(135deg, #66b1ff 0%, #409eff 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.3);
+}
+
+.forward-dialog :deep(.el-dialog__body) {
+  padding: 20px 24px;
+}
+/* 在现有的 .forward-dialog 样式后添加 */
+.forward-dialog :deep(.el-radio__label) {
+  color: #000 !important;
+}
+
+/* 或者更具体的样式 */
+.forward-dialog :deep(.el-form-item__label) {
+  color: #606266;
+  font-weight: 500;
+}
+
+.forward-dialog :deep(.el-radio-group) {
+  display: flex;
+  gap: 20px;
+}
+
+.forward-dialog :deep(.el-radio) {
+  margin-right: 0;
+}
+
+.forward-dialog :deep(.el-radio__input.is-checked + .el-radio__label) {
+  color: #409eff !important;
+  font-weight: 500;
+}
+.form-tip {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 4px;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .table-header-actions {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .forward-connect-btn {
+    order: -1;
+    width: 100%;
+    margin-right: 0;
+    margin-bottom: 8px;
   }
 }
 </style>
