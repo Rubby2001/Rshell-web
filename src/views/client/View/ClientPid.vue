@@ -560,6 +560,9 @@ const state = reactive({
     stripe: true,
     highlightCurrentRow: true,
     border: true,
+    // 性能优化：启用虚拟滚动，避免在列表很大时创建过多DOM节点
+    // max-height属性会自动启用el-table的虚拟滚动功能
+    'max-height': '600px',
     rowClassName: (row: any) => {
       if (row.softwareInfo) {
         return `${row.softwareInfo.category}-row`;

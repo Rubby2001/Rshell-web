@@ -152,7 +152,7 @@
                 正向连接
               </el-button>
               <el-tag type="info" class="refresh-tag">
-                自动刷新: 2秒
+                自动刷新: 5秒
               </el-tag>
               <el-button
                   type="success"

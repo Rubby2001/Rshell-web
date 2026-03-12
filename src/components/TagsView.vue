@@ -64,7 +64,7 @@ const handleTags = (command: string) => {
           class="tags-li"
           v-for="(item, index) in tags.list"
           :class="{ active: isActive(item.path) }"
-          :key="index"
+          :key="item.path"
       >
         <router-link :to="{ path: item.path, query: item.query }" class="tags-li-title">{{ item.title }}</router-link>
         <el-icon @click="closeTags(index)">

@@ -1,6 +1,5 @@
 // 绑定路由和vue
 import {createRouter, createWebHistory} from 'vue-router'
-import Home from '../views/HomeView.vue'
 import {cancelRequest} from "@/utils/request";
 
 const router = createRouter({
@@ -13,7 +12,8 @@ const router = createRouter({
         {
             path: '/',
             name: 'Main',
-            component: Home,
+            // 性能优化：使用懒加载避免同步导入主布局
+            component: () => import('@/views/HomeView.vue'),
             children: [
                 {
                     path: '/home',

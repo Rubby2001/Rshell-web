@@ -388,8 +388,20 @@ const ansiConverter = new AnsiToHtml({
   escapeXML: true
 })
 
+// 性能优化：缓存ANSI转换结果
+let lastShellStr = ''
+let cachedShellHtml = ''
+
 const ShellHtml = computed(() => {
-  return ansiConverter.toHtml(ShellStr.value || '')
+  const currentStr = ShellStr.value || ''
+  // 如果Shell内容未变化，使用缓存避免重复转换
+  if (currentStr === lastShellStr) {
+    return cachedShellHtml
+  }
+  // 只有当内容改变时才进行转换
+  lastShellStr = currentStr
+  cachedShellHtml = ansiConverter.toHtml(currentStr)
+  return cachedShellHtml
 })
 
 
@@ -405,6 +417,8 @@ const isExecuting = ref(false)
 const uid = String(route.query.uid);
 const outputRef = ref(null)
 const inputRef = ref(null)
+// 性能优化：定义轮询interval的引用，方便清理
+const shellContentIntervalId = ref<number | null>(null)
 
 // Dialog 相关
 const dialogVisible = ref(false)
@@ -519,7 +533,22 @@ function GetShellContent() {
   ClientAPI.get_shellcontent({ uid: uid }).then((res) => {
     ShellStrTmp.value = res.data.data
     if (ShellStr.value !== ShellStrTmp.value) {
-      ShellStr.value = ShellStrTmp.value
+      let newContent = ShellStrTmp.value
+      
+      // 性能优化：限制缓存大小
+      // 如果输出超过50KB，只保留最后的50KB内容
+      const MAX_CACHE_SIZE = 50 * 1024 // 50KB
+      if (newContent && newContent.length > MAX_CACHE_SIZE) {
+        const truncatedLength = newContent.length - MAX_CACHE_SIZE
+        newContent = newContent.substring(truncatedLength)
+        // 移除可能被截断的不完整行首
+        const firstNewline = newContent.indexOf('\n')
+        if (firstNewline !== -1) {
+          newContent = newContent.substring(firstNewline + 1)
+        }
+      }
+      
+      ShellStr.value = newContent
       nextTick(() => {
         if (outputRef.value) {
           outputRef.value.scrollTop = outputRef.value.scrollHeight
@@ -1030,11 +1059,23 @@ watch(interactiveDialogVisible, (newVal) => {
 // 8. 监听窗口大小变化
 onMounted(() => {
   window.addEventListener('resize', handleResize)
+  
+  // GetShellContent initial call
+  GetShellContent();
+  // 性能优化：轮询间隔从2000ms增加到5000ms，减少API调用频率
+  // 这在虚拟机环境中可以显著减少CPU压力
+  shellContentIntervalId.value = setInterval(GetShellContent, 5000);
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
   disconnectTerminal()
+  
+  // 清理Shell内容轮询的interval
+  if (shellContentIntervalId.value) {
+    clearInterval(shellContentIntervalId.value);
+    shellContentIntervalId.value = null;
+  }
 })
 
 const handleResize = () => {
@@ -1194,25 +1235,10 @@ const startConnectionTimer = () => {
     const minutes = Math.floor(duration / 60000)
     const seconds = Math.floor((duration % 60000) / 1000)
     connectionDuration.value = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
-  }, 1000)
+    // 性能优化：将更新频率从1000ms改为2000ms，减少DOM更新频率
+    // 用户感知不到秒数显示的1秒延迟差异，但可降低CPU压力
+  }, 2000)
 }
-
-// 监听终端尺寸变化
-if (term) {
-  term.onResize(({ cols, rows }) => {
-    terminalCols.value = cols
-    terminalRows.value = rows
-  })
-}
-
-onMounted(() => {
-  GetShellContent();
-  const intervalId = setInterval(GetShellContent, 2000);
-
-  onUnmounted(() => {
-    clearInterval(intervalId);
-  });
-});
 </script>
 
 <style scoped>
