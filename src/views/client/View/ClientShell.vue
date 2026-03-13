@@ -75,6 +75,18 @@
             </el-button>
           </el-tooltip>
 
+          <el-tooltip content="Linux脚本内存执行" placement="top">
+            <el-button
+                type="warning"
+                @click="linuxScriptDialogVisible = true"
+                size="default"
+                class="action-button"
+            >
+            <el-icon><MagicStick /></el-icon>
+              Linux脚本执行
+            </el-button>
+          </el-tooltip>
+
           <el-tooltip content="打开交互式终端" placement="top">
             <el-button
                 type="success"
@@ -269,6 +281,138 @@
       </template>
     </el-dialog>
 
+    <!-- Linux脚本执行对话框 -->
+    <el-dialog
+        v-model="linuxScriptDialogVisible"
+        title="Linux脚本执行"
+        width="520px"
+        :before-close="handleLinuxScriptClose"
+        class="enhanced-memory-dialog"
+        center
+    >
+      <template #header>
+        <div class="dialog-title">
+          <span>Linux 脚本执行</span>
+        </div>
+      </template>
+
+      <div class="dialog-content">
+        <!-- 脚本文件选择 -->
+        <div class="dialog-section">
+          <div class="section-label">
+            <el-icon><Document /></el-icon>
+            <span>脚本文件</span>
+          </div>
+          <div
+              class="file-upload-card"
+              @click="triggerLinuxScriptInput"
+              @dragover.prevent
+              @drop.prevent="handleLinuxScriptDrop"
+              :class="{ 'has-file': linuxScriptFile }"
+          >
+            <div class="upload-placeholder" v-if="!linuxScriptFile">
+              <el-icon class="upload-icon"><Upload /></el-icon>
+              <div class="upload-text">
+                <p class="upload-title">点击选择或拖拽脚本到此处</p>
+                <p class="upload-subtitle">支持 .sh脚本格式</p>
+              </div>
+            </div>
+            <div class="file-selected" v-else>
+              <el-icon class="file-icon"><Document /></el-icon>
+              <div class="file-details">
+                <div class="file-name">{{ linuxScriptFile.name }}</div>
+                <div class="file-info">
+                  <el-tag size="small" type="info">
+                    <el-icon><Document /></el-icon>
+                    {{ formatFileSize(linuxScriptFile.size) }}
+                  </el-tag>
+                  <el-tag size="small" type="success">
+                    <el-icon><Timer /></el-icon>
+                    {{ new Date(linuxScriptFile.lastModified).toLocaleDateString() }}
+                  </el-tag>
+                </div>
+              </div>
+              <el-button
+                  type="danger"
+                  size="small"
+                  circle
+                  @click.stop="removeLinuxScript"
+                  :icon="Delete"
+              />
+            </div>
+            <input
+                type="file"
+                ref="linuxScriptInputRef"
+                @change="handleLinuxScriptChange"
+                style="display: none;"
+            />
+          </div>
+        </div>
+
+        <!-- 脚本参数输入 -->
+        <div class="dialog-section">
+          <div class="section-label">
+            <el-icon><EditPen /></el-icon>
+            <span>脚本参数 (可选)</span>
+          </div>
+          <el-input
+              v-model="linuxScriptArgs"
+              placeholder="请输入脚本参数，多个参数用空格分隔"
+              type="textarea"
+              :rows="2"
+              clearable
+              class="params-input"
+              :autosize="{ minRows: 2, maxRows: 4 }"
+          >
+            <template #prefix>
+              <el-icon><Key /></el-icon>
+            </template>
+          </el-input>
+        </div>
+
+        <!-- 执行预览 -->
+        <div class="dialog-section" v-if="linuxScriptFile || linuxScriptArgs">
+          <div class="section-label">
+            <el-icon><View /></el-icon>
+            <span>执行预览</span>
+          </div>
+          <div class="preview-card">
+            <div class="preview-item" v-if="linuxScriptFile">
+              <el-icon class="preview-icon"><Document /></el-icon>
+              <div class="preview-content">
+                <div class="preview-label">脚本</div>
+                <div class="preview-value">{{ linuxScriptFile.name }}</div>
+              </div>
+            </div>
+            <div class="preview-item" v-if="linuxScriptArgs">
+              <el-icon class="preview-icon"><Key /></el-icon>
+              <div class="preview-content">
+                <div class="preview-label">参数</div>
+                <div class="preview-value">{{ linuxScriptArgs || '无' }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="handleLinuxScriptClose" :disabled="isExecuting">
+            取消
+          </el-button>
+          <el-button
+              type="primary"
+              @click="handleLinuxScriptExecute"
+              :disabled="!linuxScriptFile || isExecuting"
+              :loading="isExecuting"
+              class="execute-button"
+          >
+            确定执行
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
+
     <el-dialog
         v-model="interactiveDialogVisible"
         title="交互式终端"
@@ -418,7 +562,7 @@ const uid = String(route.query.uid);
 const outputRef = ref(null)
 const inputRef = ref(null)
 // 性能优化：定义轮询interval的引用，方便清理
-const shellContentIntervalId = ref<number | null>(null)
+const shellContentIntervalId = ref(null)
 
 // Dialog 相关
 const dialogVisible = ref(false)
@@ -426,6 +570,12 @@ const fileInputRef = ref(null)
 const selectedFile = ref(null)
 const inputParams = ref('')
 const executionMode = ref('execute-assembly')
+
+// Linux脚本执行对话框相关
+const linuxScriptDialogVisible = ref(false)
+const linuxScriptInputRef = ref(null)
+const linuxScriptFile = ref(null)
+const linuxScriptArgs = ref('')
 
 // 分组后的模式选项
 const groupedModeOptions = computed(() => [
@@ -660,6 +810,93 @@ const resetDialog = () => {
     fileInputRef.value.value = ''
   }
 }
+
+// Linux脚本执行相关函数
+const triggerLinuxScriptInput = () => {
+  if (linuxScriptInputRef.value) {
+    linuxScriptInputRef.value.click()
+  }
+}
+
+const handleLinuxScriptChange = (event) => {
+  const files = event.target.files
+  if (files && files.length > 0) {
+    linuxScriptFile.value = files[0]
+  }
+}
+
+const handleLinuxScriptDrop = (event) => {
+  const files = event.dataTransfer.files
+  if (files && files.length > 0) {
+    linuxScriptFile.value = files[0]
+  }
+}
+
+const removeLinuxScript = () => {
+  linuxScriptFile.value = null
+  if (linuxScriptInputRef.value) {
+    linuxScriptInputRef.value.value = ''
+  }
+}
+
+const handleLinuxScriptClose = () => {
+  if (isExecuting.value) {
+    ElMessage.warning('请等待当前执行完成')
+    return
+  }
+
+  if (linuxScriptFile.value || linuxScriptArgs.value) {
+    ElMessageBox.confirm(
+        '关闭将清除已选择的脚本和输入的参数，确定要关闭吗？',
+        '提示',
+        {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning',
+        }
+    ).then(() => {
+      linuxScriptDialogVisible.value = false
+      resetLinuxScriptDialog()
+    })
+  } else {
+    linuxScriptDialogVisible.value = false
+  }
+}
+
+const resetLinuxScriptDialog = () => {
+  linuxScriptFile.value = null
+  linuxScriptArgs.value = ''
+  if (linuxScriptInputRef.value) {
+    linuxScriptInputRef.value.value = ''
+  }
+}
+
+const handleLinuxScriptExecute = async () => {
+  if (!linuxScriptFile.value) {
+    ElMessage.warning('请先选择一个脚本文件！')
+    return
+  }
+
+  isExecuting.value = true
+  try {
+    const args = linuxScriptArgs.value.trim()
+
+    const res = await ClientAPI.ExecuteLinuxScript({ uid: uid, file: linuxScriptFile.value, args: args })
+    if (res.data.status === 200) {
+      ElMessage.success("后台执行成功")
+      linuxScriptDialogVisible.value = false
+      resetLinuxScriptDialog()
+    } else {
+      ElMessage.error(res.data.data)
+    }
+  } catch (error) {
+    console.error('执行过程中出错:', error)
+    ElMessage.error(`执行失败: ${error.message || '未知错误'}`)
+  } finally {
+    isExecuting.value = false
+  }
+}
+
 const interactiveDialogVisible = ref(false)
 const isFullscreen = ref(false)
 const terminalRef = ref(null)
