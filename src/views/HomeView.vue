@@ -40,14 +40,14 @@ const route = useRoute();
   padding: 130px 24px 24px 24px;
   min-height: 100vh;
   /**background: linear-gradient(135deg, #ffe6eb 0%, #ffecd2 100%);**/
-  opacity: 0.7;
+  opacity: var(--content-opacity);
 }
 
 .content-card {
   max-width: 1400px;
   margin: 0 auto;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(20px);
+  background: var(--glass-bg-card);
+  backdrop-filter: var(--glass-backdrop);
   border-radius: 20px;
   box-shadow: 0 8px 32px color-mix(in srgb, var(--theme-primary) 20%, rgba(0,0,0,0));
   border: 3px solid;

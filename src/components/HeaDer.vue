@@ -396,8 +396,8 @@ const handleLogout = async () => {
   left: 0;
   right: 0;
   height: 60px;
-  /**background: rgba(255, 255, 255, 0.85);**/
-  backdrop-filter: blur(20px);
+  background: var(--header-bg);
+  backdrop-filter: var(--glass-backdrop);
   box-shadow: 0 4px 20px color-mix(in srgb, var(--theme-primary) 15%, rgba(0,0,0,0));
   display: flex;
   align-items: center;

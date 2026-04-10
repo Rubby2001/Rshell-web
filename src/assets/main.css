@@ -35,6 +35,13 @@ html {
     --theme-light: #e6f1ff;
     --theme-dark: #357abd;
     --theme-gradient: linear-gradient(135deg, #e6f1ff 0%, #cde3ff 100%);
+    /* 毛玻璃效果变量 - 无背景图片时为不透明，有背景图片时半透明 */
+    --glass-bg: rgba(255, 255, 255, 0.97);
+    --glass-bg-card: rgba(255, 255, 255, 0.97);
+    --glass-bg-light: rgba(255, 255, 255, 0.95);
+    --glass-backdrop: none;
+    --header-bg: rgba(255, 255, 255, 0.97);
+    --content-opacity: 1;
 }
 
 html,
@@ -67,10 +74,16 @@ a {
     text-decoration: none
 }
 
-/* 当有背景图片时，只移除渐变背景，不覆盖 backgroundImage */
+/* 当有背景图片时，只移除渐变背景，不覆盖 backgroundImage；同时启用毛玻璃效果变量 */
 body.has-background {
     background-image: none !important;
     background-color: transparent !important;
+    --glass-bg: rgba(255, 255, 255, 0.75);
+    --glass-bg-card: rgba(255, 255, 255, 0.85);
+    --glass-bg-light: rgba(255, 255, 255, 0.6);
+    --glass-backdrop: blur(20px);
+    --header-bg: transparent;
+    --content-opacity: 0.7;
 }
 
 
@@ -101,8 +114,8 @@ body.has-background {
 
 .container {
     padding: 30px;
-    background: rgba(255, 255, 255, 0.75);
-    backdrop-filter: blur(20px);
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-backdrop);
     border: 2px solid;
     border-color: color-mix(in srgb, var(--theme-primary) 10%, transparent);
     border-radius: 20px;
@@ -118,8 +131,8 @@ body.has-background {
 .crumbs {
     margin: 15px 0;
     padding: 12px 16px;
-    background: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(10px);
+    background: var(--glass-bg-light);
+    backdrop-filter: var(--glass-backdrop);
     border-radius: 12px;
     border: 1px solid rgba(0, 0, 0, 0.1);
     color: var(--theme-primary);
@@ -211,8 +224,8 @@ body.has-background {
     border-radius: 16px !important;
     border: 2px solid rgba(0, 0, 0, 0.1) !important;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important;
-    background: rgba(255, 255, 255, 0.75) !important;
-    backdrop-filter: blur(20px);
+    background: var(--glass-bg) !important;
+    backdrop-filter: var(--glass-backdrop);
     transition: all 0.3s ease;
 }
 
@@ -681,8 +694,8 @@ code, pre {
 .plugins-tips {
     padding: 20px 10px;
     margin-bottom: 20px;
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(10px);
+    background: var(--glass-bg-card);
+    backdrop-filter: var(--glass-backdrop);
     border-radius: 12px;
     border: 1px solid rgba(0, 0, 0, 0.05);
     color: var(--theme-primary);
