@@ -160,8 +160,7 @@ body.has-background {
 }
 
 .el-table--striped .el-table__body tr.el-table__row--striped td {
-    background: var(--theme-light) !important;
-    opacity: 0.5;
+    background: color-mix(in srgb, var(--theme-light) 40%, transparent) !important;
 }
 
 /* 表格文字颜色 */
