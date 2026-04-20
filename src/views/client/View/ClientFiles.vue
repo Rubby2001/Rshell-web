@@ -1182,6 +1182,19 @@ watch(() => currentFolder.value?.path, (newPath) => {
   font-weight: 500;
 }
 
+:deep(.el-dropdown-menu__item) {
+  color: #303133 !important;
+}
+
+:deep(.el-dropdown-menu__item:hover) {
+  color: #409eff !important;
+  background-color: #ecf5ff !important;
+}
+
+:deep(.el-dropdown-menu__item .el-icon) {
+  color: inherit !important;
+}
+
 @media (max-width: 1200px) {
   .file-tree-panel {
     width: 250px;

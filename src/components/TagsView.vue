@@ -160,4 +160,13 @@ const handleTags = (command: string) => {
   background: #fff;
   z-index: 10;
 }
+
+:deep(.el-dropdown-menu__item) {
+  color: #303133 !important;
+}
+
+:deep(.el-dropdown-menu__item:hover) {
+  color: #409eff !important;
+  background-color: #ecf5ff !important;
+}
 </style>

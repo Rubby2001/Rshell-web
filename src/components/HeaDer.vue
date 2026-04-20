@@ -605,11 +605,12 @@ const handleLogout = async () => {
   align-items: center;
   gap: 10px;
   min-width: 150px;
+  color: #303133 !important;
 }
 
 .user-dropdown-menu :deep(.el-dropdown-menu__item .el-icon) {
   font-size: 14px;
-  color: #606266;
+  color: #606266 !important;
 }
 
 .user-dropdown-menu :deep(.el-dropdown-menu__item:hover) {
