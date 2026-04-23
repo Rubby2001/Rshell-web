@@ -34,7 +34,7 @@
           <el-input
               v-model="command"
               class="enhanced-command-input"
-              placeholder="输入命令，按 Enter 执行，↑↓ 键切换历史命令，clear清除历史命令"
+              placeholder="输入命令shell + [cmd]，按 Enter 执行，↑↓ 键切换历史命令，clear清除历史命令"
               @keyup.enter="sendCommand"
               @keydown.up.prevent="prevCommand"
               @keydown.down.prevent="nextCommand"
@@ -99,6 +99,18 @@
             </el-button>
           </el-tooltip>
 
+          <el-tooltip content="调用插件执行" placement="top">
+            <el-button
+                type="danger"
+                @click="openPluginDialog"
+                size="default"
+                class="action-button"
+            >
+              <el-icon><MagicStick /></el-icon>
+              插件调用
+            </el-button>
+          </el-tooltip>
+
         </div>
       </div>
 
@@ -133,27 +145,26 @@
               class="mode-selector"
               size="large"
               filterable
+              popper-class="plugin-type-dropdown"
+              :teleported="true"
+              :append-to-body="true"
+              placement="bottom"
+              fallback-placements="['bottom']"
           >
-            <el-option-group
-                v-for="group in groupedModeOptions"
-                :key="group.title"
-                :label="group.title"
+            <el-option
+                v-for="item in modeOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
             >
-              <el-option
-                  v-for="item in group.options"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value"
-              >
-                <div class="mode-option-item">
-                  <el-icon :class="item.iconClass"><component :is="item.icon" /></el-icon>
-                  <div class="option-details">
-                    <div class="option-label">{{ item.label }}</div>
-                    <div class="option-desc">{{ item.description }}</div>
-                  </div>
+              <div class="mode-option-item">
+                <el-icon :class="item.iconClass"><component :is="item.icon" /></el-icon>
+                <div class="option-details">
+                  <div class="option-label">{{ item.label }}</div>
+                  <div class="option-desc">{{ item.description }}</div>
                 </div>
-              </el-option>
-            </el-option-group>
+              </div>
+            </el-option>
           </el-select>
         </div>
 
@@ -482,6 +493,37 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 插件调用对话框 -->
+    <el-dialog v-model="pluginDialogVisible" title="调用插件" top="15vh" width="500px" center :append-to-body="true" :lock-scroll="false">
+      <el-form label-width="100px" style="min-height: 180px;">
+        <el-form-item label="选择系统">
+          <el-radio-group v-model="pluginQuery.os" @change="fetchAvailablePlugins">
+            <el-radio label="windows"><span style="color: #606266; font-weight: normal;">Windows</span></el-radio>
+            <el-radio label="linux"><span style="color: #606266; font-weight: normal;">Linux</span></el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="选择插件">
+          <el-select v-model="pluginQuery.pluginId" placeholder="请选择需要的插件" style="width:100%" :teleported="true" :append-to-body="true" placement="bottom" fallback-placements="['bottom']">
+            <el-option
+              v-for="item in filteredPlugins"
+              :key="item.Id"
+              :label="item.Name + ' (' + item.Type + ')'"
+              :value="item.Id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="执行参数">
+          <el-input v-model="pluginQuery.args" placeholder="输入插件执行参数（可选）" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span>
+          <el-button @click="pluginDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="handleExecutePlugin">后台执行</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -489,6 +531,7 @@
 import { ref, onMounted, onUnmounted, nextTick, computed,watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import ClientAPI from '@/api/clients'
+import { getPluginList, executePlugin } from '@/api/plugin'
 import { useRoute } from "vue-router"
 import { useCommandHistoryStore } from '@/stores/shellcommand'
 import {
@@ -577,55 +620,88 @@ const linuxScriptInputRef = ref(null)
 const linuxScriptFile = ref(null)
 const linuxScriptArgs = ref('')
 
-// 分组后的模式选项
-const groupedModeOptions = computed(() => [
+// 插件调用相关
+const pluginDialogVisible = ref(false)
+const allPlugins = ref([])
+const filteredPlugins = ref([])
+const pluginQuery = ref({
+  os: 'windows',
+  pluginId: null,
+  args: ''
+})
+
+const fetchAvailablePlugins = async () => {
+  pluginQuery.value.pluginId = null
+  try {
+    const res = await getPluginList()
+    if (res.data.status === 200) {
+      allPlugins.value = res.data.data || []
+      filteredPlugins.value = allPlugins.value.filter(p => p.Os === pluginQuery.value.os)
+    }
+  } catch (e) {
+    console.error("加载插件失败", e)
+  }
+}
+
+const openPluginDialog = () => {
+  pluginDialogVisible.value = true
+  fetchAvailablePlugins()
+}
+
+const handleExecutePlugin = async () => {
+  if (!pluginQuery.value.pluginId) {
+    ElMessage.warning('请选择要执行的插件')
+    return
+  }
+  isExecuting.value = true
+  try {
+    const res = await executePlugin({
+      id: pluginQuery.value.pluginId,
+      uid: String(route.query.uid),
+      args: pluginQuery.value.args
+    })
+    if (res.data.status === 200) {
+      ElMessage.success('插件推送执行成功')
+      pluginDialogVisible.value = false
+    } else {
+      ElMessage.error(res.data.data || '执行失败')
+    }
+  } catch (error) {
+    ElMessage.error('执行请求出错')
+  } finally {
+    isExecuting.value = false
+  }
+}
+
+// 扁平化后的模式选项
+const modeOptions = computed(() => [
   {
-    title: '.NET 程序执行',
-    options: [
-      {
-        value: 'execute-assembly',
-        label: 'Execute Assembly',
-        description: '执行 .NET 程序集内存加载',
-        icon: 'MagicStick',
-        iconClass: 'net-icon'
-      }
-    ]
+    value: 'execute-assembly',
+    label: 'Execute Assembly',
+    description: '执行 .NET 程序集内存加载',
+    icon: 'MagicStick',
+    iconClass: 'net-icon'
   },
   {
-    title: '原生程序执行',
-    options: [
-      {
-        value: 'inline-bin',
-        label: 'Inline Binary',
-        description: '执行原生二进制程序内存加载',
-        icon: 'Cpu',
-        iconClass: 'native-icon'
-      }
-    ]
+    value: 'inline-bin',
+    label: 'Inline Binary',
+    description: '执行原生二进制程序内存加载',
+    icon: 'Cpu',
+    iconClass: 'native-icon'
   },
   {
-    title: 'Shellcode注入',
-    options: [
-      {
-        value: 'shellcode-inject',
-        label: 'Shellcode Inject',
-        description: '注入并执行 Shellcode',
-        icon: 'Connection',
-        iconClass: 'inject-icon'
-      }
-    ]
+    value: 'shellcode-inject',
+    label: 'Shellcode Inject',
+    description: '注入并执行 Shellcode',
+    icon: 'Connection',
+    iconClass: 'inject-icon'
   },
   {
-    title: 'BOF 执行',
-    options: [
-      {
-        value: 'inline-execute',
-        label: 'Inline Execute',
-        description: '执行 BOF (Beacon Object File)',
-        icon: 'Tools',
-        iconClass: 'bof-icon'
-      }
-    ]
+    value: 'inline-execute',
+    label: 'Inline Execute',
+    description: '执行 BOF (Beacon Object File)',
+    icon: 'Tools',
+    iconClass: 'bof-icon'
   }
 ])
 
@@ -709,11 +785,8 @@ function GetShellContent() {
 }
 
 const getModeLabel = (value) => {
-  for (const group of groupedModeOptions.value) {
-    const mode = group.options.find(m => m.value === value)
-    if (mode) return mode.label
-  }
-  return value
+  const mode = modeOptions.value.find(m => m.value === value)
+  return mode ? mode.label : value
 }
 
 const triggerFileInput = () => {
@@ -1763,7 +1836,7 @@ const startConnectionTimer = () => {
 }
 
 .net-icon {
-  color: #ffffff;
+  color: #a8b2c1;
 }
 
 .native-icon {
@@ -1787,6 +1860,7 @@ const startConnectionTimer = () => {
 .option-label {
   font-weight: 600;
   color: #2c3e50;
+  line-height: normal;
 }
 
 .option-desc {

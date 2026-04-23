@@ -217,6 +217,14 @@ const handleLogout = async () => {
             <span class="nav-text">客户端生成</span>
           </router-link>
           <router-link
+              to="/Plugins"
+              class="nav-item"
+              :class="{ 'nav-item-active': $route.path === '/Plugins' }"
+          >
+            <el-icon class="nav-icon"><ElementPlus /></el-icon>
+            <span class="nav-text">插件管理</span>
+          </router-link>
+          <router-link
               to="/Settings"
               class="nav-item"
               :class="{ 'nav-item-active': $route.path === '/Settings' }"

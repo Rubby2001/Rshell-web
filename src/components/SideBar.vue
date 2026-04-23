@@ -61,10 +61,24 @@ const items: MenuItem[] = [
   },
   {
     icon: Setting,
-    index: '/Settings',
+    index: 'system-settings',
     title: '系统设置',
     description: '系统配置和参数调整',
-    permiss: '2'
+    permiss: '2',
+    subs: [
+      {
+        index: '/Settings',
+        title: '基本设置',
+        permiss: '2',
+        description: '系统基本设置'
+      },
+      {
+        index: '/Plugins',
+        title: '插件管理',
+        permiss: '2',
+        description: '配置和管理自定义插件'
+      }
+    ]
   },
 ]
 

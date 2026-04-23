@@ -69,6 +69,15 @@ const router = createRouter({
                     },
                     component: () => import('@/views/settings/Settings.vue')
                 },
+                {
+                    path: '/Plugins',
+                    name: 'Plugins',
+                    meta: {
+                        title: '插件管理',
+                        permiss: '5'
+                    },
+                    component: () => import('@/views/plugin/PluginView.vue')
+                },
 
 // {
 //   path: '/user_list',
