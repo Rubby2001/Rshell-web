@@ -41,7 +41,74 @@
 
       <el-divider />
 
-      
+      <!-- 通知设置 -->
+      <div class="background-section">
+        <h3 class="section-title">上线提醒配置</h3>
+        <el-tabs v-model="activeNotificationTab">
+          <el-tab-pane label="企业微信" name="wecom">
+            <el-form label-width="120px" :model="notifications.wecom">
+              <el-form-item label="启用提醒">
+                <el-switch v-model="notifications.wecom.enabled" />
+              </el-form-item>
+              <el-form-item label="Webhook KEY">
+                <el-input v-model="notifications.wecom.url" placeholder="请输入 Webhook KEY" clearable />
+              </el-form-item>
+            </el-form>
+          </el-tab-pane>
+
+          <el-tab-pane label="钉钉" name="dingtalk">
+            <el-form label-width="120px" :model="notifications.dingtalk">
+              <el-form-item label="启用提醒">
+                <el-switch v-model="notifications.dingtalk.enabled" />
+              </el-form-item>
+              <el-form-item label="Webhook URL">
+                <el-input v-model="notifications.dingtalk.webhook" placeholder="请输入 Webhook URL" clearable />
+              </el-form-item>
+              <el-form-item label="加签 Secret">
+                <el-input v-model="notifications.dingtalk.secret" placeholder="请输入加签 Secret（可选）" clearable />
+              </el-form-item>
+            </el-form>
+          </el-tab-pane>
+
+          <el-tab-pane label="Telegram" name="telegram">
+            <el-form label-width="120px" :model="notifications.telegram">
+              <el-form-item label="启用提醒">
+                <el-switch v-model="notifications.telegram.enabled" />
+              </el-form-item>
+              <el-form-item label="Bot Token">
+                <el-input v-model="notifications.telegram.token" placeholder="Bot Token" clearable />
+              </el-form-item>
+              <el-form-item label="Chat ID">
+                <el-input v-model="notifications.telegram.chat_id" placeholder="Chat ID" clearable />
+              </el-form-item>
+            </el-form>
+          </el-tab-pane>
+
+          <el-tab-pane label="Email" name="email">
+            <el-form label-width="120px" :model="notifications.email">
+              <el-form-item label="启用提醒">
+                <el-switch v-model="notifications.email.enabled" />
+              </el-form-item>
+              <el-form-item label="SMTP 服务器">
+                <el-input v-model="notifications.email.host" placeholder="例如 smtp.qq.com" clearable />
+              </el-form-item>
+              <el-form-item label="SMTP 端口">
+                <el-input-number v-model="notifications.email.port" :min="1" :max="65535" />
+              </el-form-item>
+              <el-form-item label="用户名">
+                <el-input v-model="notifications.email.username" placeholder="邮箱账号" clearable />
+              </el-form-item>
+              <el-form-item label="密码 / 授权码">
+                <el-input v-model="notifications.email.password" type="password" placeholder="邮箱密码" show-password />
+              </el-form-item>
+              <el-form-item label="接收邮箱">
+                <el-input v-model="notifications.email.to" placeholder="接收提醒的邮箱地址" clearable />
+              </el-form-item>
+            </el-form>
+          </el-tab-pane>
+        </el-tabs>
+      </div>
+
       <el-divider />
 
       <!-- MCP 配置信息 -->
@@ -69,13 +136,12 @@
       </div>
 
       <!-- 其他设置 -->
-      <el-table :data="tableData" style="width: 100%">
+      <el-table :data="filteredTableData" style="width: 100%">
         <el-table-column prop="Name" label="设置项" width="200" />
 
         <!-- 可编辑值 -->
         <el-table-column label="值">
           <template #default="{ row }">
-            <!-- 针对 mcp_enabled 用开关显示 -->
             <template v-if="row.Name === 'mcp_enabled'">
               <el-switch
                 v-model="row.Value"
@@ -85,14 +151,12 @@
                 inactive-text="禁用"
               />
             </template>
-            <!-- 其他设置项使用输入框 -->
             <template v-else>
               <el-input v-model="row.Value" placeholder="请输入值" clearable/>
             </template>
           </template>
         </el-table-column>
 
-        <!-- 操作按钮 -->
         <el-table-column label="操作" width="150">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="saveSetting(row)">
@@ -111,13 +175,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, reactive } from "vue";
 import { useUserStore } from "@/stores/user";
 import { ElMessage } from "element-plus";
 import SettingsAPI from "@/api/settings";
 import { Upload, Delete } from '@element-plus/icons-vue';
 
 const tableData = ref<{ Name: string; Value: string }[]>([]);
+const filteredTableData = computed(() => {
+  const hides = ["wecom", "dingtalk", "telegram", "email"];
+  return tableData.value.filter(item => !hides.includes(item.Name));
+});
 
 const userStore = useUserStore();
 const userToken = computed(() => userStore.getToken());
@@ -134,7 +202,15 @@ const mcpEnabled = computed(() => {
 
 const backgroundImage = ref<string>('');
 
-// 从 localStorage 获取背景图片
+const activeNotificationTab = ref('wecom');
+
+const notifications = reactive<any>({
+  wecom: { enabled: false, url: '' },
+  dingtalk: { enabled: false, webhook: '', secret: '' },
+  telegram: { enabled: false, token: '', chat_id: '' },
+  email: { enabled: false, host: '', port: 465, username: '', password: '', to: '' }
+});
+
 const getBackgroundImage = () => {
   const bg = localStorage.getItem('backgroundImage');
   if (bg) {
@@ -143,7 +219,6 @@ const getBackgroundImage = () => {
   }
 };
 
-// 处理背景图片上传
 const handleBackgroundChange = (file: any) => {
   const reader = new FileReader();
   reader.readAsDataURL(file.raw);
@@ -156,7 +231,6 @@ const handleBackgroundChange = (file: any) => {
   };
 };
 
-// 清除背景图片
 const clearBackground = () => {
   backgroundImage.value = '';
   localStorage.removeItem('backgroundImage');
@@ -169,10 +243,8 @@ const clearBackground = () => {
   ElMessage.success('背景图片已清除');
 };
 
-// 应用背景图片
 const applyBackground = (bg: string) => {
   document.body.classList.add('has-background');
-  // document.body.style.background = `url(${bg}) center center / cover no-repeat fixed`;
   document.body.style.setProperty(
       'background', 
       `url(${bg}) center center / cover no-repeat fixed`, 
@@ -180,17 +252,32 @@ const applyBackground = (bg: string) => {
   );
 };
 
-// 获取配置列表
 const getSettingsList = async () => {
   const res = await SettingsAPI.getSettingsList();
   if (res.status === 200) {
-    tableData.value = res.data.data; // 假设返回格式是 {data:[{Name:"xxx",Value:"xxx"}]}
+    tableData.value = res.data.data;
+    
+    // Parse notifications
+    tableData.value.forEach(item => {
+      if (notifications[item.Name] !== undefined) {
+        try {
+          if (item.Name === 'wecom' && (!item.Value.startsWith('{') && item.Value !== '')) {
+             notifications.wecom.url = item.Value;
+             notifications.wecom.enabled = true;
+          } else if (item.Value) {
+             const parsed = JSON.parse(item.Value);
+             Object.assign(notifications[item.Name], parsed);
+          }
+        } catch(e) {
+          console.warn("Parse setting config failed", item.Name);
+        }
+      }
+    });
   }
 };
 
-// 保存单个配置
 const saveSetting = async (row: { Name: string; Value: string }) => {
-  const res = await SettingsAPI.editSettings([row]); // 单个也要包在数组里
+  const res = await SettingsAPI.editSettings([row]); 
   if (res.status === 200) {
     ElMessage.success("保存成功");
   } else {
@@ -198,9 +285,21 @@ const saveSetting = async (row: { Name: string; Value: string }) => {
   }
 };
 
-// 保存全部配置
 const saveAll = async () => {
-  const res = await SettingsAPI.editSettings(tableData.value);
+  const toSave = [...tableData.value];
+  
+  // Update notifications into the saving list
+  ["wecom", "dingtalk", "telegram", "email"].forEach(name => {
+    const existing = toSave.find(t => t.Name === name);
+    const jsonStr = JSON.stringify(notifications[name]);
+    if (existing) {
+      existing.Value = jsonStr;
+    } else {
+      toSave.push({ Name: name, Value: jsonStr });
+    }
+  });
+
+  const res = await SettingsAPI.editSettings(toSave);
   if (res.status === 200) {
     ElMessage.success("全部保存成功");
   } else {
