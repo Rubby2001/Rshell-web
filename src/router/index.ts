@@ -189,9 +189,18 @@ const router = createRouter({
                             permiss: 2
                         },
                         component: () => import('@/views/client/View/ClientNotes.vue')
+                    },
+                    {
+                        path: '/client/screenshots',
+                        name: 'Screenshots',
+                        meta: {
+                            title: 'Screenshots',
+                            permiss: 2
+                        },
+                        component: () => import('@/views/client/View/ClientScreenshots.vue')
                     }
                 ]
-        }
+            }
         ,
         {
             path: '/login',

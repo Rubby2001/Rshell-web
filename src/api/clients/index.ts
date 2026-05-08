@@ -342,6 +342,20 @@ export default{
         })
 
     },
+    captureScreenshot(data: { uid: string }){
+        return request({
+            url:"/client/screenshot/capture",
+            method:"POST",
+            data:data
+        })
+    },
+    getScreenshots(data: { uid: string }){
+        return request({
+            url:"/client/screenshot/list",
+            method:"GET",
+            params: data
+        })
+    },
     createForwardConnection(data: {
         type: string
         address: string

@@ -87,7 +87,8 @@ import {
   Cpu as Process,
   Connection as Network,
   Download,
-  Document
+  Document,
+  Picture
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -158,6 +159,11 @@ const menuItems = [
     icon: Document,
     index: '/client/notes',
     title: "备注信息"
+  },
+  {
+    icon: Picture,
+    index: '/client/screenshots',
+    title: "屏幕截图"
   }
 ]
 
