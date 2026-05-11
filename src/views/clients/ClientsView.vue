@@ -155,6 +155,14 @@
                 自动刷新: 5秒
               </el-tag>
               <el-button
+                  type="danger"
+                  @click="handleBatchExit"
+                  size="small"
+              >
+                <el-icon><SwitchButton /></el-icon>
+                一键退出
+              </el-button>
+              <el-button
                   type="success"
                   @click="ReloadClick"
                   size="small"
@@ -529,6 +537,29 @@ const handleExit = (uid :string) =>{
         }
         dialogVisible.value = false
       })
+}
+
+const handleBatchExit = async () => {
+  try {
+    await ElMessageBox.confirm(
+        '确定要一键退出所有客户端吗？',
+        '一键退出确认',
+        { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' }
+    )
+    const res = await ClientAPI.batch_exit()
+    if (res.data.status === 200) {
+      ElMessage.success(`已退出 ${res.data.count} 个客户端`)
+      tableData.value = []
+      const cfg = state.options.paginationConfig
+      if (cfg && cfg.total !== undefined) {
+        cfg.total = 0
+      }
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('操作失败')
+    }
+  }
 }
 const handleViewClick = (val: any) => {
   router.push({

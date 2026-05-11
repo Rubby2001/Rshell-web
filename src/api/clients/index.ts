@@ -155,6 +155,12 @@ export default{
             params:data,
         })
     },
+    batch_exit(){
+        return request({
+            url:"/client/batch-exit",
+            method:"POST",
+        })
+    },
     add_uid_note(data:{uid:string,note:string}){
         return request({
       //      baseURL: axiosConfig.baseURL,
