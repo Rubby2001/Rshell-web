@@ -82,6 +82,7 @@ import {
   Monitor,
   CircleCheck,
   Back,
+  Key,
   Monitor as Terminal,
   Document as File,
   Cpu as Process,
@@ -164,6 +165,11 @@ const menuItems = [
     icon: Picture,
     index: '/client/screenshots',
     title: "屏幕截图"
+  },
+  {
+    icon: Key,
+    index: '/client/credentials',
+    title: "凭据管理"
   }
 ]
 

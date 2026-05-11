@@ -59,7 +59,6 @@ declare module 'vue' {
     RouterBreadcrumd: typeof import('./src/components/RouterBreadcrumd.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
-    SideBar: typeof import('./src/components/SideBar.vue')['default']
     TableColumn: typeof import('./src/components/Common/Tables/TableColumn.vue')['default']
     TablesView: typeof import('./src/components/Common/Tables/TablesView.vue')['default']
     TagsView: typeof import('./src/components/TagsView.vue')['default']

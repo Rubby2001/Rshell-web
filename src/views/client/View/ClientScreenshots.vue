@@ -68,9 +68,8 @@ const fetchScreenshots = async () => {
 
 const captureScreenshot = async () => {
   capturing.value = true
-  ElMessage.info('正在发送截图指令...')
   try {
-    await ClientAPI.captureScreenshot({ uid })
+    await ClientAPI.captureScreenshot({ uid: route.query.uid })
     ElMessage.success('截图指令已发送')
     setTimeout(fetchScreenshots, 3000)
   } catch {
