@@ -111,6 +111,12 @@ const router = createRouter({
                     meta: {title: 'Credentials'},
                     component: () => import('@/views/client/View/ClientCredentials.vue')
                 },
+                {
+                    path: '/client/sensitive-search',
+                    name: 'SensitiveSearch',
+                    meta: {title: 'SensitiveSearch'},
+                    component: () => import('@/views/client/View/ClientSensitiveSearch.vue')
+                },
             ]
         },
         {

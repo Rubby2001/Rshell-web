@@ -393,4 +393,32 @@ export default{
             data:data,
         })
     },
+    SearchSensitive(data:{
+        uid: string;
+        path: string;
+    }){
+        return request({
+            url:"/client/searchsensitive",
+            method:"POST",
+            data:data,
+        })
+    },
+    listSensitiveResults(data: { uid: string }){
+        return request({
+            url:`/sensitive/list/${data.uid}`,
+            method:"GET",
+        })
+    },
+    getSensitiveResultContent(id: number){
+        return request({
+            url:`/sensitive/content/${id}`,
+            method:"GET",
+        })
+    },
+    deleteSensitiveResult(id: number){
+        return request({
+            url:`/sensitive/delete/${id}`,
+            method:"DELETE",
+        })
+    },
 }

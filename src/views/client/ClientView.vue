@@ -89,7 +89,8 @@ import {
   Connection as Network,
   Download,
   Document,
-  Picture
+  Picture,
+  Search
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -170,6 +171,11 @@ const menuItems = [
     icon: Key,
     index: '/client/credentials',
     title: "凭据管理"
+  },
+  {
+    icon: Search,
+    index: '/client/sensitive-search',
+    title: "敏感搜索"
   },
 ]
 

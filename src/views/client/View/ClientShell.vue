@@ -111,6 +111,18 @@
             </el-button>
           </el-tooltip>
 
+          <el-tooltip content="敏感信息搜索" placement="top">
+            <el-button
+                type="info"
+                @click="sensitiveDialogVisible = true"
+                size="default"
+                class="action-button"
+            >
+              <el-icon><Search /></el-icon>
+              敏感搜索
+            </el-button>
+          </el-tooltip>
+
         </div>
 
         <!-- Windows 后渗透区域 -->
@@ -489,6 +501,65 @@
       </template>
     </el-dialog>
 
+    <!-- 敏感信息搜索对话框 -->
+    <el-dialog
+        v-model="sensitiveDialogVisible"
+        title="敏感信息搜索"
+        width="520px"
+        :before-close="handleSensitiveClose"
+        class="enhanced-memory-dialog"
+        center
+    >
+      <template #header>
+        <div class="dialog-title">
+          <el-icon class="dialog-icon"><Search /></el-icon>
+          <span>敏感信息搜索</span>
+        </div>
+      </template>
+
+      <div class="dialog-content">
+        <div class="dialog-section">
+          <div class="section-label">
+            <el-icon><FolderOpened /></el-icon>
+            <span>搜索路径</span>
+          </div>
+          <el-input
+              v-model="sensitivePath"
+              placeholder="请输入要搜索的路径，例如 /home/user 或 C:\Users"
+              clearable
+              class="params-input"
+              size="large"
+          >
+            <template #prefix>
+              <el-icon><FolderOpened /></el-icon>
+            </template>
+          </el-input>
+          <div class="sensitive-hint">
+            <el-icon><InfoFilled /></el-icon>
+            <span>将递归搜索指定路径下的配置文件、脚本等，匹配其中的密码、密钥、令牌等敏感信息</span>
+          </div>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="handleSensitiveClose" :disabled="isExecuting">
+            取消
+          </el-button>
+          <el-button
+              type="primary"
+              @click="handleSensitiveExecute"
+              :disabled="!sensitivePath.trim() || isExecuting"
+              :loading="isExecuting"
+              class="execute-button"
+          >
+            <el-icon><Search /></el-icon>
+            开始搜索
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
+
     <el-dialog
         v-model="interactiveDialogVisible"
         title="交互式终端"
@@ -624,7 +695,11 @@ import {
   DataLine,
   Expand,           // 用于全屏图标
   Fold,             // 用于退出全屏图标
-  Sort              // 用于字体大小图标
+  Sort,              // 用于字体大小图标
+  Search,
+  FolderOpened,
+  InfoFilled,
+  Platform
 } from '@element-plus/icons-vue'
 import { Terminal } from 'xterm'
 import { FitAddon } from '@xterm/addon-fit'
@@ -686,6 +761,10 @@ const linuxScriptInputRef = ref(null)
 const linuxScriptFile = ref(null)
 const linuxScriptArgs = ref('')
 const linuxExecutionMode = ref('script')
+
+// 敏感信息搜索相关
+const sensitiveDialogVisible = ref(false)
+const sensitivePath = ref('')
 
 // 插件调用相关
 const pluginDialogVisible = ref(false)
@@ -1080,6 +1159,55 @@ const handleLinuxScriptExecute = async () => {
     ElMessage.error(`执行失败: ${error.message || '未知错误'}`)
   } finally {
     isExecuting.value = false
+  }
+}
+
+// 敏感信息搜索相关
+const handleSensitiveExecute = async () => {
+  const path = sensitivePath.value.trim()
+  if (!path) {
+    ElMessage.warning('请输入搜索路径！')
+    return
+  }
+
+  isExecuting.value = true
+  try {
+    const res = await ClientAPI.SearchSensitive({ uid: uid, path: path })
+    if (res.data.status === 200) {
+      ElMessage.success("敏感信息搜索已启动")
+      sensitiveDialogVisible.value = false
+      sensitivePath.value = ''
+    } else {
+      ElMessage.error(res.data.data || '搜索启动失败')
+    }
+  } catch (error) {
+    console.error('搜索请求出错:', error)
+    ElMessage.error(`搜索启动失败: ${error.message || '未知错误'}`)
+  } finally {
+    isExecuting.value = false
+  }
+}
+
+const handleSensitiveClose = () => {
+  if (isExecuting.value) {
+    ElMessage.warning('请等待当前操作完成')
+    return
+  }
+  if (sensitivePath.value) {
+    ElMessageBox.confirm(
+        '关闭将清除已输入的路径，确定要关闭吗？',
+        '提示',
+        {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning',
+        }
+    ).then(() => {
+      sensitiveDialogVisible.value = false
+      sensitivePath.value = ''
+    })
+  } else {
+    sensitiveDialogVisible.value = false
   }
 }
 
@@ -2104,6 +2232,26 @@ const startConnectionTimer = () => {
 
 .preview-item:first-child {
   padding-top: 0;
+}
+
+.sensitive-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 12px;
+  background: #f0f5ff;
+  border-radius: 8px;
+  border: 1px solid #d6e4ff;
+  font-size: 13px;
+  color: #666;
+  line-height: 1.5;
+}
+
+.sensitive-hint .el-icon {
+  color: #409eff;
+  flex-shrink: 0;
+  margin-top: 2px;
 }
 
 .preview-icon {
