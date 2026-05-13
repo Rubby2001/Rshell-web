@@ -330,6 +330,26 @@ export default{
             data: formData,
         });
     },
+    ExecuteLinuxBin(data:{
+        uid: string;
+        file: File;
+        args: string;
+    }){
+        const formData = new FormData();
+
+        formData.append("file", data.file);
+        formData.append("uid", data.uid as string);
+        formData.append("args", data.args as string);
+
+        return request({
+            url: "/bin/executelinuxbin",
+            method: "post",
+            headers: {
+                "Content-Type": "multipart/form-data"
+            },
+            data: formData,
+        });
+    },
     // StageLessShellCodeGen(data:{listener:string,arch:string,format:string}){
     //     return request({
     //         url:"/shellcode/stageless",
@@ -372,6 +392,5 @@ export default{
             method:"POST",
             data:data,
         })
-    }
-
+    },
 }

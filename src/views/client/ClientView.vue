@@ -170,7 +170,7 @@ const menuItems = [
     icon: Key,
     index: '/client/credentials',
     title: "凭据管理"
-  }
+  },
 ]
 
 // 当前活跃的菜单项

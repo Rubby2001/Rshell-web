@@ -75,15 +75,15 @@
             </el-button>
           </el-tooltip>
 
-          <el-tooltip content="Linux脚本内存执行" placement="top">
+          <el-tooltip content="Linux执行 (脚本/内存)" placement="top">
             <el-button
                 type="warning"
                 @click="linuxScriptDialogVisible = true"
                 size="default"
                 class="action-button"
             >
-            <el-icon><MagicStick /></el-icon>
-              Linux脚本执行
+            <el-icon><Platform /></el-icon>
+              Linux执行
             </el-button>
           </el-tooltip>
 
@@ -313,10 +313,10 @@
       </template>
     </el-dialog>
 
-    <!-- Linux脚本执行对话框 -->
+    <!-- Linux执行对话框 -->
     <el-dialog
         v-model="linuxScriptDialogVisible"
-        title="Linux脚本执行"
+        title="Linux执行"
         width="520px"
         :before-close="handleLinuxScriptClose"
         class="enhanced-memory-dialog"
@@ -324,16 +324,52 @@
     >
       <template #header>
         <div class="dialog-title">
-          <span>Linux 脚本执行</span>
+          <el-icon class="dialog-icon"><Platform /></el-icon>
+          <span>Linux 执行</span>
         </div>
       </template>
 
       <div class="dialog-content">
-        <!-- 脚本文件选择 -->
+        <!-- 执行模式选择 -->
+        <div class="dialog-section">
+          <div class="section-label">
+            <el-icon><Setting /></el-icon>
+            <span>执行模式</span>
+          </div>
+          <el-select
+              v-model="linuxExecutionMode"
+              placeholder="请选择执行模式"
+              class="mode-selector"
+              size="large"
+              filterable
+              popper-class="plugin-type-dropdown"
+              :teleported="true"
+              :append-to-body="true"
+              placement="bottom"
+              fallback-placements="['bottom']"
+          >
+            <el-option
+                v-for="item in linuxModeOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+            >
+              <div class="mode-option-item">
+                <el-icon :class="item.iconClass"><component :is="item.icon" /></el-icon>
+                <div class="option-details">
+                  <div class="option-label">{{ item.label }}</div>
+                  <div class="option-desc">{{ item.description }}</div>
+                </div>
+              </div>
+            </el-option>
+          </el-select>
+        </div>
+
+        <!-- 文件选择 -->
         <div class="dialog-section">
           <div class="section-label">
             <el-icon><Document /></el-icon>
-            <span>脚本文件</span>
+            <span>{{ linuxExecutionMode === 'binary' ? '二进制文件' : '脚本文件' }}</span>
           </div>
           <div
               class="file-upload-card"
@@ -345,8 +381,8 @@
             <div class="upload-placeholder" v-if="!linuxScriptFile">
               <el-icon class="upload-icon"><Upload /></el-icon>
               <div class="upload-text">
-                <p class="upload-title">点击选择或拖拽脚本到此处</p>
-                <p class="upload-subtitle">支持 .sh脚本格式</p>
+                <p class="upload-title">{{ linuxExecutionMode === 'binary' ? '点击选择或拖拽二进制文件到此处' : '点击选择或拖拽脚本到此处' }}</p>
+                <p class="upload-subtitle">{{ linuxExecutionMode === 'binary' ? '支持 ELF 二进制文件' : '支持 .sh 脚本格式' }}</p>
               </div>
             </div>
             <div class="file-selected" v-else>
@@ -403,16 +439,23 @@
         </div>
 
         <!-- 执行预览 -->
-        <div class="dialog-section" v-if="linuxScriptFile || linuxScriptArgs">
+        <div class="dialog-section" v-if="linuxScriptFile || linuxScriptArgs || linuxExecutionMode">
           <div class="section-label">
             <el-icon><View /></el-icon>
             <span>执行预览</span>
           </div>
           <div class="preview-card">
+            <div class="preview-item">
+              <el-icon class="preview-icon"><Setting /></el-icon>
+              <div class="preview-content">
+                <div class="preview-label">模式</div>
+                <div class="preview-value">{{ linuxExecutionMode === 'binary' ? 'Memory Execute' : 'Bash Script' }}</div>
+              </div>
+            </div>
             <div class="preview-item" v-if="linuxScriptFile">
               <el-icon class="preview-icon"><Document /></el-icon>
               <div class="preview-content">
-                <div class="preview-label">脚本</div>
+                <div class="preview-label">{{ linuxExecutionMode === 'binary' ? '文件' : '脚本' }}</div>
                 <div class="preview-value">{{ linuxScriptFile.name }}</div>
               </div>
             </div>
@@ -439,6 +482,7 @@
               :loading="isExecuting"
               class="execute-button"
           >
+            <el-icon><MagicStick /></el-icon>
             确定执行
           </el-button>
         </div>
@@ -641,6 +685,7 @@ const linuxScriptDialogVisible = ref(false)
 const linuxScriptInputRef = ref(null)
 const linuxScriptFile = ref(null)
 const linuxScriptArgs = ref('')
+const linuxExecutionMode = ref('script')
 
 // 插件调用相关
 const pluginDialogVisible = ref(false)
@@ -745,6 +790,24 @@ const modeOptions = computed(() => [
     description: '执行 BOF (Beacon Object File)',
     icon: 'Tools',
     iconClass: 'bof-icon'
+  }
+])
+
+// Linux执行模式选项
+const linuxModeOptions = computed(() => [
+  {
+    value: 'script',
+    label: 'Bash Script',
+    description: '执行 Shell 脚本 (无文件落地)',
+    icon: 'Platform',
+    iconClass: 'linux-icon'
+  },
+  {
+    value: 'binary',
+    label: 'Memory Execute',
+    description: '上传二进制到 /tmp 执行并删除',
+    icon: 'Cpu',
+    iconClass: 'native-icon'
   }
 ])
 
@@ -982,6 +1045,7 @@ const handleLinuxScriptClose = () => {
 const resetLinuxScriptDialog = () => {
   linuxScriptFile.value = null
   linuxScriptArgs.value = ''
+  linuxExecutionMode.value = 'script'
   if (linuxScriptInputRef.value) {
     linuxScriptInputRef.value.value = ''
   }
@@ -989,15 +1053,21 @@ const resetLinuxScriptDialog = () => {
 
 const handleLinuxScriptExecute = async () => {
   if (!linuxScriptFile.value) {
-    ElMessage.warning('请先选择一个脚本文件！')
+    ElMessage.warning('请先选择一个文件！')
     return
   }
 
   isExecuting.value = true
   try {
     const args = linuxScriptArgs.value.trim()
+    const mode = linuxExecutionMode.value
 
-    const res = await ClientAPI.ExecuteLinuxScript({ uid: uid, file: linuxScriptFile.value, args: args })
+    let res
+    if (mode === 'binary') {
+      res = await ClientAPI.ExecuteLinuxBin({ uid: uid, file: linuxScriptFile.value, args: args })
+    } else {
+      res = await ClientAPI.ExecuteLinuxScript({ uid: uid, file: linuxScriptFile.value, args: args })
+    }
     if (res.data.status === 200) {
       ElMessage.success("后台执行成功")
       linuxScriptDialogVisible.value = false
@@ -1999,6 +2069,17 @@ const startConnectionTimer = () => {
 .params-input :deep(.el-textarea__inner) {
   font-family: 'Consolas', monospace;
   line-height: 1.5;
+  color: #333333 !important;
+  background: #ffffff !important;
+}
+
+.params-input :deep(.el-input__inner) {
+  color: #333333 !important;
+  background: #ffffff !important;
+}
+
+.enhanced-memory-dialog :deep(.el-input__wrapper) {
+  background: #ffffff !important;
 }
 
 .preview-card {

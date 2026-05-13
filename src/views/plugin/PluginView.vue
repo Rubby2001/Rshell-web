@@ -182,6 +182,15 @@ onMounted(() => {
                   </div>
                 </div>
               </el-option>
+              <el-option label="Binary (Memory)" value="binary">
+                <div class="mode-option-item">
+                  <el-icon class="native-icon"><Cpu /></el-icon>
+                  <div class="option-details">
+                    <div class="option-label">Binary (Memory)</div>
+                    <div class="option-desc">上传 ELF 到 /tmp 执行并删除</div>
+                  </div>
+                </div>
+              </el-option>
             </template>
           </el-select>
         </el-form-item>
