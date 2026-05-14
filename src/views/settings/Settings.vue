@@ -111,30 +111,6 @@
 
       <el-divider />
 
-      <!-- MCP 配置信息 -->
-      <div class="mcp-section background-section" v-if="mcpEnabled" style="margin-bottom: 24px;">
-        <h3 class="section-title">MCP 服务已启用</h3>
-        <el-alert
-          title="将以下配置填入您的 AI IDE (例如 Cursor、Windsurf、Chatbox) 以连接 Rshell 控制端"
-          type="success"
-          show-icon
-          :closable="false"
-          style="margin-bottom: 16px;"
-        />
-        
-        <div style="background: rgba(0,0,0,0.05); padding: 16px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.1);">
-            <div style="margin-bottom: 12px;">
-              <div style="font-size: 14px; color: #333; font-weight: bold; margin-bottom: 4px;">SSE 接入地址 (Server URL):</div>
-              <div style="background: #fff; border: 1px solid #dcdfe6; color: #333; font-family: monospace; padding: 8px 12px; border-radius: 4px; user-select: all;">{{ mcpSseUrl }}</div>
-            </div>
-            
-            <div>
-              <div style="font-size: 14px; color: #333; font-weight: bold; margin-bottom: 4px;">如客户端不支持自定义Header，你也可以在URL中追加 token 参数:</div>
-              <div style="background: #fff; border: 1px solid #dcdfe6; color: #333; font-family: monospace; padding: 8px 12px; border-radius: 4px; user-select: all;">{{ mcpSseUrl }}?token={{ userToken }}</div>
-            </div>
-        </div>
-      </div>
-
       <!-- 其他设置 -->
       <el-table :data="filteredTableData" style="width: 100%">
         <el-table-column prop="Name" label="设置项" width="200" />
@@ -142,18 +118,7 @@
         <!-- 可编辑值 -->
         <el-table-column label="值">
           <template #default="{ row }">
-            <template v-if="row.Name === 'mcp_enabled'">
-              <el-switch
-                v-model="row.Value"
-                active-value="true"
-                inactive-value="false"
-                active-text="启用"
-                inactive-text="禁用"
-              />
-            </template>
-            <template v-else>
-              <el-input v-model="row.Value" placeholder="请输入值" clearable/>
-            </template>
+            <el-input v-model="row.Value" placeholder="请输入值" clearable/>
           </template>
         </el-table-column>
 
@@ -189,16 +154,6 @@ const filteredTableData = computed(() => {
 
 const userStore = useUserStore();
 const userToken = computed(() => userStore.getToken());
-const mcpSseUrl = computed(() => {
-  const protocol = window.location.protocol;
-  const host = window.location.host;
-  return `${protocol}//${host}/api/mcp/sse`;
-});
-
-const mcpEnabled = computed(() => {
-  const mcpItem = tableData.value.find(item => item.Name === 'mcp_enabled');
-  return mcpItem ? mcpItem.Value === 'true' : false;
-});
 
 const backgroundImage = ref<string>('');
 
