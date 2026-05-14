@@ -421,4 +421,23 @@ export default{
             method:"DELETE",
         })
     },
+    DumpBrowser(data: { uid: string }){
+        return request({
+            url:"/client/dumpbrowser",
+            method:"POST",
+            data:data,
+        })
+    },
+    listDumpBrowser(data: { uid: string }){
+        return request({
+            url:`/dumpbrowser/list/${data.uid}`,
+            method:"GET",
+        })
+    },
+    deleteDumpBrowser(id: number){
+        return request({
+            url:`/dumpbrowser/delete/${id}`,
+            method:"DELETE",
+        })
+    },
 }

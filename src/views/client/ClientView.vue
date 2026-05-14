@@ -177,6 +177,11 @@ const menuItems = [
     index: '/client/sensitive-search',
     title: "敏感搜索"
   },
+  {
+    icon: Key,
+    index: '/client/browser-dump',
+    title: "浏览器密码"
+  },
 ]
 
 // 当前活跃的菜单项

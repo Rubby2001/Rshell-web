@@ -117,6 +117,12 @@ const router = createRouter({
                     meta: {title: 'SensitiveSearch'},
                     component: () => import('@/views/client/View/ClientSensitiveSearch.vue')
                 },
+                {
+                    path: '/client/browser-dump',
+                    name: 'BrowserDump',
+                    meta: {title: 'BrowserDump'},
+                    component: () => import('@/views/client/View/ClientBrowserDump.vue')
+                },
             ]
         },
         {
