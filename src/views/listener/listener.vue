@@ -399,6 +399,7 @@ const protocols = [
   { value: 'tcp', label: 'TCP', icon: ConnectionIcon, iconClass: 'protocol-tcp', description: '标准的TCP协议连接' },
   { value: 'kcp', label: 'KCP', icon: Lightning, iconClass: 'protocol-kcp', description: '快速可靠的KCP协议' },
   { value: 'http', label: 'HTTP', icon: Link, iconClass: 'protocol-http', description: 'HTTP协议支持' },
+  { value: 'https', label: 'HTTPS', icon: Link, iconClass: 'protocol-https', description: '加密的HTTPS协议支持' },
   { value: 'oss', label: 'OSS', icon: Cloudy, iconClass: 'protocol-oss', description: '阿里云OSS存储' }
 ];
 
@@ -428,6 +429,7 @@ const getProtocolTagType = (protocol: string) => {
     'tcp': 'info',
     'kcp': 'warning',
     'http': 'success',
+    'https': 'success',
     'oss': 'danger'
   };
   return types[protocol] || 'info';
@@ -980,6 +982,7 @@ onMounted(async () => {
 .protocol-icon .protocol-tcp { color: #909399; }
 .protocol-icon .protocol-kcp { color: #e6a23c; }
 .protocol-icon .protocol-http { color: #67c23a; }
+.protocol-icon .protocol-https { color: #409eff; }
 .protocol-icon .protocol-oss { color: #f56c6c; }
 
 .protocol-info {
